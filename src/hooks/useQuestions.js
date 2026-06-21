@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
 
@@ -235,7 +235,7 @@ export function useQuestions() {
   /**
    * Fetch all questions for a given category from Supabase
    */
-  const fetchQuestionsByCategory = async (categoryId) => {
+  const fetchQuestionsByCategory = useCallback(async (categoryId) => {
     if (!user) throw new Error('Not authenticated');
 
     try {
@@ -268,7 +268,7 @@ export function useQuestions() {
       console.error('Error fetching questions:', err);
       throw err;
     }
-  };
+  }, [user]);
 
   /**
    * Update an existing question in Supabase

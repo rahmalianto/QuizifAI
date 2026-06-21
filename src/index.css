@@ -536,6 +536,18 @@ select {
   }
 }
 
+.dashboard-content-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: var(--space-8);
+}
+
+@media (max-width: 900px) {
+  .dashboard-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* --- Stat Card --- */
 .stat-card {
   background: var(--neutral-0);
