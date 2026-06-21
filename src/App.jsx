@@ -9,6 +9,7 @@ import GeneratePage from './pages/GeneratePage';
 import CategoriesPage from './pages/CategoriesPage';
 import CategoryDetailPage from './pages/CategoryDetailPage';
 import PracticePage from './pages/PracticePage';
+import TagsPage from './pages/TagsPage';
 
 function AuthRedirect({ children }) {
   const { user, loading } = useAuth();
@@ -81,6 +82,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CategoryDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/tags"
+        element={
+          <ProtectedRoute>
+            <TagsPage />
           </ProtectedRoute>
         }
       />

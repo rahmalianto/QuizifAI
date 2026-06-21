@@ -133,16 +133,43 @@ export function useQuestions() {
 
       if (insertError) throw insertError;
 
-      // Insert tags
+      // Upsert tags
+      const uniqueTagNames = [...new Set(questionsToSave.flatMap((q) => q.tags || []))]
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+        
+      let tagMap = {};
+      if (uniqueTagNames.length > 0) {
+        const { data: upsertedTags, error: tagsError } = await supabase
+          .from('tags')
+          .upsert(
+            uniqueTagNames.map((name) => ({ user_id: user.id, name })),
+            { onConflict: 'user_id,name' }
+          )
+          .select();
+          
+        if (tagsError) {
+          console.error('Error upserting tags:', tagsError);
+        } else {
+          upsertedTags.forEach((t) => {
+            tagMap[t.name] = t.id;
+          });
+        }
+      }
+
+      // Insert tag relations
       const tagRows = [];
       questionsToSave.forEach((q, index) => {
         const savedQuestion = insertedQuestions[index];
         if (q.tags && q.tags.length > 0 && savedQuestion) {
           q.tags.forEach((tag) => {
-            tagRows.push({
-              question_id: savedQuestion.id,
-              tag_name: tag.trim(),
-            });
+            const tagName = tag.trim().toLowerCase();
+            if (tagMap[tagName]) {
+              tagRows.push({
+                question_id: savedQuestion.id,
+                tag_id: tagMap[tagName],
+              });
+            }
           });
         }
       });
@@ -208,17 +235,31 @@ export function useQuestions() {
 
       // Insert tags if any
       if (tags && tags.length > 0 && insertedQuestion) {
-        const tagRows = tags.map((tag) => ({
-          question_id: insertedQuestion.id,
-          tag_name: tag.trim(),
-        }));
+        const uniqueTagNames = [...new Set(tags)].map((t) => t.trim().toLowerCase()).filter(Boolean);
+        
+        const { data: upsertedTags, error: tagsError } = await supabase
+          .from('tags')
+          .upsert(
+            uniqueTagNames.map((name) => ({ user_id: user.id, name })),
+            { onConflict: 'user_id,name' }
+          )
+          .select();
+          
+        if (!tagsError && upsertedTags) {
+          const tagRows = upsertedTags.map((t) => ({
+            question_id: insertedQuestion.id,
+            tag_id: t.id,
+          }));
 
-        const { error: tagError } = await supabase
-          .from('question_tags')
-          .insert(tagRows);
+          const { error: tagError } = await supabase
+            .from('question_tags')
+            .insert(tagRows);
 
-        if (tagError) {
-          console.error('Error inserting tags for manual question:', tagError);
+          if (tagError) {
+            console.error('Error inserting tags for manual question:', tagError);
+          }
+        } else {
+          console.error('Error upserting tags:', tagsError);
         }
       }
 
@@ -243,7 +284,7 @@ export function useQuestions() {
 
       const { data, error: fetchError } = await supabase
         .from('questions')
-        .select('*, question_tags(tag_name), categories(name)')
+        .select('*, question_tags(tags(name)), categories(name)')
         .eq('user_id', user.id);
 
       if (fetchError) throw fetchError;
@@ -259,7 +300,7 @@ export function useQuestions() {
           typeof q.incorrect_options === 'string'
             ? JSON.parse(q.incorrect_options)
             : q.incorrect_options || [],
-        tags: (q.question_tags || []).map((t) => t.tag_name),
+        tags: (q.question_tags || []).map((qt) => qt.tags?.name).filter(Boolean),
         category_name: q.categories?.name,
       }));
     } catch (err) {
@@ -307,7 +348,7 @@ export function useQuestions() {
 
       const { data, error: fetchError } = await supabase
         .from('questions')
-        .select('*, question_tags(tag_name)')
+        .select('*, question_tags(tags(name))')
         .eq('category_id', categoryId)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
@@ -325,7 +366,7 @@ export function useQuestions() {
           typeof q.incorrect_options === 'string'
             ? JSON.parse(q.incorrect_options)
             : q.incorrect_options || [],
-        tags: (q.question_tags || []).map((t) => t.tag_name),
+        tags: (q.question_tags || []).map((qt) => qt.tags?.name).filter(Boolean),
       }));
     } catch (err) {
       setError(err.message);
@@ -378,17 +419,31 @@ export function useQuestions() {
           .eq('question_id', questionId);
 
         if (tags.length > 0) {
-          const tagRows = tags.map((tag) => ({
-            question_id: questionId,
-            tag_name: tag.trim(),
-          }));
+          const uniqueTagNames = [...new Set(tags)].map((t) => t.trim().toLowerCase()).filter(Boolean);
+          
+          const { data: upsertedTags, error: tagsError } = await supabase
+            .from('tags')
+            .upsert(
+              uniqueTagNames.map((name) => ({ user_id: user.id, name })),
+              { onConflict: 'user_id,name' }
+            )
+            .select();
+            
+          if (!tagsError && upsertedTags) {
+            const tagRows = upsertedTags.map((t) => ({
+              question_id: questionId,
+              tag_id: t.id,
+            }));
 
-          const { error: tagError } = await supabase
-            .from('question_tags')
-            .insert(tagRows);
+            const { error: tagError } = await supabase
+              .from('question_tags')
+              .insert(tagRows);
 
-          if (tagError) {
-            console.error('Error syncing tags:', tagError);
+            if (tagError) {
+              console.error('Error syncing tags:', tagError);
+            }
+          } else {
+            console.error('Error upserting tags:', tagsError);
           }
         }
       }

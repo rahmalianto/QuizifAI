@@ -1,11 +1,12 @@
-import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Sparkles, FolderOpen, LogOut, Dices } from 'lucide-react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { LayoutDashboard, Sparkles, FolderOpen, LogOut, Dices, Tag } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = async () => {
     try {
@@ -66,6 +67,18 @@ export default function Navbar() {
             >
               <FolderOpen size={18} />
               <span>Categories</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/tags"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+              id="nav-tags"
+            >
+              <Tag size={18} />
+              <span>Tags</span>
             </NavLink>
           </li>
           <li>

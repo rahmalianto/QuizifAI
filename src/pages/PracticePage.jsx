@@ -257,31 +257,27 @@ export default function PracticePage() {
           
           <div className="card animate-in" style={{ padding: 'var(--space-8)', boxShadow: 'var(--shadow-md)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-light)' }}>
-              <span className="badge badge-primary" style={{ padding: 'var(--space-1) var(--space-3)', fontSize: 'var(--text-sm)' }}>
-                {currentQuestion?.answer_type?.replace('_', ' ')}
-              </span>
-              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', fontWeight: 'var(--weight-medium)' }}>
-                Pool: {questions.length} Questions
-              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center' }}>
+                <span className="badge badge-primary" style={{ padding: 'var(--space-1) var(--space-3)', fontSize: 'var(--text-sm)' }}>
+                  {currentQuestion?.answer_type?.replace('_', ' ')}
+                </span>
+                
+                {currentQuestion?.category_name && (
+                  <span className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-700)', border: '1px solid var(--neutral-200)' }}>
+                    📁 {currentQuestion.category_name}
+                  </span>
+                )}
+                {currentQuestion?.tags?.map((tag, idx) => (
+                  <span key={idx} className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-600)', border: '1px solid var(--neutral-200)' }}>
+                    # {tag}
+                  </span>
+                ))}
+              </div>
             </div>
             
-            <h3 style={{ fontSize: 'var(--text-xl)', lineHeight: '1.6', marginBottom: 'var(--space-4)', color: 'var(--neutral-900)' }}>
+            <h3 style={{ fontSize: 'var(--text-xl)', lineHeight: '1.6', marginBottom: 'var(--space-6)', color: 'var(--neutral-900)' }}>
               {currentQuestion?.question_text}
             </h3>
-            
-            {/* Category and Tags display */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-6)', alignItems: 'center' }}>
-              {currentQuestion?.category_name && (
-                <span className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-700)', border: '1px solid var(--neutral-200)' }}>
-                  📁 {currentQuestion.category_name}
-                </span>
-              )}
-              {currentQuestion?.tags?.map((tag, idx) => (
-                <span key={idx} className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-600)', border: '1px solid var(--neutral-200)' }}>
-                  # {tag}
-                </span>
-              ))}
-            </div>
             
             {renderOptions()}
             

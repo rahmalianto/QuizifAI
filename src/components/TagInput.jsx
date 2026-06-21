@@ -1,21 +1,47 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useTags } from '../hooks/useTags';
+import toast from 'react-hot-toast';
 
 export default function TagInput({
   tags = [],
   onChange,
-  placeholder = 'Add a tag and press Enter',
+  placeholder = 'Search tags...',
   disabled = false,
 }) {
   const [inputValue, setInputValue] = useState('');
+  const [showDropdown, setShowDropdown] = useState(false);
   const inputRef = useRef(null);
+  const navigate = useNavigate();
+  const { tags: existingTags, fetchTags } = useTags();
 
-  const addTag = (tag) => {
-    const trimmed = tag.trim().toLowerCase();
-    if (trimmed && !tags.includes(trimmed)) {
-      onChange([...tags, trimmed]);
+  useEffect(() => {
+    fetchTags();
+  }, [fetchTags]);
+
+  const filteredTags = existingTags.filter(
+    (t) => t.name.includes(inputValue.trim().toLowerCase()) && !tags.includes(t.name)
+  );
+
+  const addTag = (tagName) => {
+    const trimmed = tagName.trim().toLowerCase();
+    if (!trimmed) return;
+    
+    // Check if it exists in the database
+    const exists = existingTags.some(t => t.name === trimmed);
+    
+    if (exists) {
+      if (!tags.includes(trimmed)) {
+        onChange([...tags, trimmed]);
+      }
+      setInputValue('');
+      setShowDropdown(false);
+    } else {
+      // Not found, redirect to tags menu
+      toast('Tag not found. Redirecting to Tags page...', { icon: '🏷️' });
+      navigate('/tags');
     }
-    setInputValue('');
   };
 
   const removeTag = (tagToRemove) => {
@@ -33,7 +59,7 @@ export default function TagInput({
   };
 
   return (
-    <div className="input-group">
+    <div className="input-group" style={{ position: 'relative' }}>
       <label>Tags</label>
       <div
         style={{
@@ -71,7 +97,12 @@ export default function TagInput({
           ref={inputRef}
           type="text"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            setShowDropdown(true);
+          }}
+          onFocus={() => setShowDropdown(true)}
+          onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
           onKeyDown={handleKeyDown}
           placeholder={tags.length === 0 ? placeholder : ''}
           disabled={disabled}
@@ -87,6 +118,54 @@ export default function TagInput({
           id="tag-text-input"
         />
       </div>
+
+      {showDropdown && inputValue.trim() && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          background: 'var(--neutral-0)',
+          border: '1px solid var(--neutral-200)',
+          borderRadius: 'var(--radius-md)',
+          boxShadow: 'var(--shadow-md)',
+          zIndex: 10,
+          maxHeight: '200px',
+          overflowY: 'auto',
+          marginTop: '4px'
+        }}>
+          {filteredTags.length > 0 ? (
+            filteredTags.map(tag => (
+              <div 
+                key={tag.id}
+                onClick={() => addTag(tag.name)}
+                style={{
+                  padding: 'var(--space-2) var(--space-3)',
+                  cursor: 'pointer',
+                  borderBottom: '1px solid var(--neutral-100)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = 'var(--neutral-50)'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+              >
+                <span>{tag.name}</span>
+                {tag.description && <span style={{ fontSize: '12px', color: 'var(--neutral-500)' }}>{tag.description}</span>}
+              </div>
+            ))
+          ) : (
+            <div style={{
+              padding: 'var(--space-2) var(--space-3)',
+              color: 'var(--neutral-500)',
+              fontSize: 'var(--text-sm)',
+              fontStyle: 'italic'
+            }}>
+              Tag not found. Press Enter to go create it.
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
