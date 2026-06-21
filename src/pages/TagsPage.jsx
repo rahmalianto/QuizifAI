@@ -38,6 +38,11 @@ export default function TagsPage() {
     setShowCreate(true);
   };
 
+  const handleRowClick = (tag, e) => {
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    handleEdit(tag);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -172,7 +177,12 @@ export default function TagsPage() {
                   </thead>
                   <tbody>
                     {tags.map((tag) => (
-                      <tr key={tag.id} style={{ borderBottom: '1px solid var(--border-light)', ':hover': { backgroundColor: 'var(--neutral-50)' } }}>
+                      <tr 
+                        key={tag.id} 
+                        style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                        onClick={(e) => handleRowClick(tag, e)}
+                        className="table-row-hover"
+                      >
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                             <Tag size={16} color="var(--primary-600)" />

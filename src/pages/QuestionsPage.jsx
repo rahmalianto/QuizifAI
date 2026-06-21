@@ -43,6 +43,11 @@ export default function QuestionsPage() {
     setEditingQuestion(question);
   };
 
+  const handleRowClick = (question, e) => {
+    if (e.target.closest('button') || e.target.closest('a')) return;
+    handleEdit(question);
+  };
+
   const handleSaveEdit = async (updates) => {
     try {
       await updateQuestion(editingQuestion.id, updates);
@@ -170,7 +175,12 @@ export default function QuestionsPage() {
                   </thead>
                   <tbody>
                     {filteredQuestions.map((q) => (
-                      <tr key={q.id} style={{ borderBottom: '1px solid var(--border-light)', ':hover': { backgroundColor: 'var(--neutral-50)' } }}>
+                      <tr 
+                        key={q.id} 
+                        style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                        onClick={(e) => handleRowClick(q, e)}
+                        className="table-row-hover"
+                      >
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
                           <div style={{ marginBottom: 'var(--space-1)', color: 'var(--neutral-900)', fontWeight: 'var(--weight-medium)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {q.question_text}
