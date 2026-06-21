@@ -6,7 +6,7 @@ import EmptyState from '../components/EmptyState';
 import { Dices, ArrowRight, CheckCircle, Eye } from 'lucide-react';
 
 export default function PracticePage() {
-  const { fetchAllQuestions } = useQuestions();
+  const { fetchAllQuestions, savePracticeActivity } = useQuestions();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   
@@ -14,6 +14,7 @@ export default function PracticePage() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [currentOptions, setCurrentOptions] = useState([]);
+  const [sessionId] = useState(() => crypto.randomUUID());
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -65,6 +66,42 @@ export default function PracticePage() {
       );
     } else {
       setSelectedAnswers([opt]);
+    }
+  };
+
+  const handleSubmitAnswer = async () => {
+    setShowAnswer(true);
+
+    const question = questions[currentIndex];
+    let score = 0;
+    const correctAnswers = question.correct_answers || [];
+    
+    if (question.answer_type === 'MULTIPLE_CHOICE' || question.answer_type === 'TRUE_FALSE') {
+      const isCorrect = selectedAnswers.length === 1 && correctAnswers.includes(selectedAnswers[0]);
+      score = isCorrect ? 1 : 0;
+    } else if (question.answer_type === 'CHECKBOX') {
+      let correctCount = 0;
+      let wrongCount = 0;
+      selectedAnswers.forEach(ans => {
+        if (correctAnswers.includes(ans)) correctCount++;
+        else wrongCount++;
+      });
+      let rawScore = (correctCount - wrongCount) / Math.max(1, correctAnswers.length);
+      score = Math.max(0, Math.min(1, rawScore));
+    } else if (question.answer_type === 'OPEN_ENDED') {
+      const userText = (selectedAnswers[0] || '').trim().toLowerCase();
+      const match = correctAnswers.some(ans => ans.trim().toLowerCase() === userText);
+      score = match ? 1 : 0;
+    }
+
+    if (savePracticeActivity) {
+      await savePracticeActivity({
+        sessionId: sessionId,
+        questionId: question.id,
+        correctAnswer: JSON.stringify(correctAnswers),
+        myAnswer: JSON.stringify(selectedAnswers),
+        correctnessScore: score
+      });
     }
   };
 
@@ -270,7 +307,7 @@ export default function PracticePage() {
                 <button 
                   className="btn btn-primary btn-lg" 
                   style={{ width: '100%', maxWidth: '300px' }}
-                  onClick={() => setShowAnswer(true)} 
+                  onClick={handleSubmitAnswer} 
                   disabled={selectedAnswers.length === 0 && currentQuestion?.answer_type !== 'OPEN_ENDED'}
                   id="btn-show-answer"
                 >

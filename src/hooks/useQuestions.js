@@ -270,6 +270,33 @@ export function useQuestions() {
   }, [user]);
 
   /**
+   * Save practice activity
+   */
+  const savePracticeActivity = async ({ sessionId, questionId, correctAnswer, myAnswer, correctnessScore }) => {
+    if (!user) return null;
+
+    try {
+      const { data, error: insertError } = await supabase
+        .from('practice_activity')
+        .insert({
+          user_id: user.id,
+          session_id: sessionId,
+          question_id: questionId,
+          correct_answer: correctAnswer,
+          my_answer: myAnswer,
+          correctness_score: correctnessScore
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      return data;
+    } catch (err) {
+      console.error('Error saving practice activity:', err);
+    }
+  };
+
+  /**
    * Fetch all questions for a given category from Supabase
    */
   const fetchQuestionsByCategory = useCallback(async (categoryId) => {
@@ -420,6 +447,7 @@ export function useQuestions() {
     saveQuestions,
     addManualQuestion,
     fetchAllQuestions,
+    savePracticeActivity,
     fetchQuestionsByCategory,
     updateQuestion,
     deleteQuestion,
