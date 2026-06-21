@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { FolderOpen, Edit3, Trash2, Check, X, HelpCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { FolderOpen, Edit3, Trash2, Check, X, HelpCircle, ArrowRight } from 'lucide-react';
 
 export default function CategoryCard({ category, onUpdate, onDelete }) {
+  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(category.name);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -73,12 +75,17 @@ export default function CategoryCard({ category, onUpdate, onDelete }) {
             </div>
           ) : (
             <>
-              <h5 style={{ marginBottom: 'var(--space-1)' }}>{category.name}</h5>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <HelpCircle size={14} style={{ color: 'var(--neutral-400)' }} />
-                <span style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
-                  {category.question_count} {category.question_count === 1 ? 'question' : 'questions'}
-                </span>
+              <div
+                style={{ cursor: 'pointer', flex: 1 }}
+                onClick={() => navigate(`/categories/${category.id}`)}
+              >
+                <h5 style={{ marginBottom: 'var(--space-1)' }}>{category.name}</h5>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <HelpCircle size={14} style={{ color: 'var(--neutral-400)' }} />
+                  <span style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
+                    {category.question_count} {category.question_count === 1 ? 'question' : 'questions'}
+                  </span>
+                </div>
               </div>
             </>
           )}
@@ -102,6 +109,14 @@ export default function CategoryCard({ category, onUpdate, onDelete }) {
               id={`category-delete-btn-${category.id}`}
             >
               <Trash2 size={16} />
+            </button>
+            <button
+              className="btn btn-ghost btn-icon"
+              onClick={() => navigate(`/categories/${category.id}`)}
+              title="View questions"
+              id={`category-view-btn-${category.id}`}
+            >
+              <ArrowRight size={16} />
             </button>
           </div>
         )}

@@ -7,6 +7,7 @@ import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import GeneratePage from './pages/GeneratePage';
 import CategoriesPage from './pages/CategoriesPage';
+import CategoryDetailPage from './pages/CategoryDetailPage';
 
 function AuthRedirect({ children }) {
   const { user, loading } = useAuth();
@@ -71,6 +72,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CategoriesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/categories/:categoryId"
+        element={
+          <ProtectedRoute>
+            <CategoryDetailPage />
           </ProtectedRoute>
         }
       />

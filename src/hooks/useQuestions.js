@@ -233,6 +233,136 @@ export function useQuestions() {
   };
 
   /**
+   * Fetch all questions for a given category from Supabase
+   */
+  const fetchQuestionsByCategory = async (categoryId) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('questions')
+        .select('*, question_tags(tag_name)')
+        .eq('category_id', categoryId)
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      // Normalize: parse JSON strings and flatten tags
+      return (data || []).map((q) => ({
+        ...q,
+        correct_answers:
+          typeof q.correct_answers === 'string'
+            ? JSON.parse(q.correct_answers)
+            : q.correct_answers || [],
+        incorrect_options:
+          typeof q.incorrect_options === 'string'
+            ? JSON.parse(q.incorrect_options)
+            : q.incorrect_options || [],
+        tags: (q.question_tags || []).map((t) => t.tag_name),
+      }));
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching questions:', err);
+      throw err;
+    }
+  };
+
+  /**
+   * Update an existing question in Supabase
+   */
+  const updateQuestion = async (questionId, {
+    questionText,
+    answerType,
+    correctAnswers,
+    incorrectOptions,
+    tags,
+  }) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const updates = {
+        question_text: questionText,
+        answer_type: answerType,
+        correct_answers: JSON.stringify(correctAnswers),
+        incorrect_options: incorrectOptions
+          ? JSON.stringify(incorrectOptions)
+          : null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data, error: updateError } = await supabase
+        .from('questions')
+        .update(updates)
+        .eq('id', questionId)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+
+      // Sync tags: delete old, insert new
+      if (tags !== undefined) {
+        await supabase
+          .from('question_tags')
+          .delete()
+          .eq('question_id', questionId);
+
+        if (tags.length > 0) {
+          const tagRows = tags.map((tag) => ({
+            question_id: questionId,
+            tag_name: tag.trim(),
+          }));
+
+          const { error: tagError } = await supabase
+            .from('question_tags')
+            .insert(tagRows);
+
+          if (tagError) {
+            console.error('Error syncing tags:', tagError);
+          }
+        }
+      }
+
+      return data;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error updating question:', err);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Delete a question from Supabase
+   */
+  const deleteQuestion = async (questionId) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setError(null);
+
+      const { error: deleteError } = await supabase
+        .from('questions')
+        .delete()
+        .eq('id', questionId)
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error deleting question:', err);
+      throw err;
+    }
+  };
+
+  /**
    * Clear generated questions
    */
   const clearGenerated = () => {
@@ -252,6 +382,9 @@ export function useQuestions() {
     setAllInclusion,
     saveQuestions,
     addManualQuestion,
+    fetchQuestionsByCategory,
+    updateQuestion,
+    deleteQuestion,
     clearGenerated,
   };
 }

@@ -168,10 +168,12 @@ export default function DashboardPage() {
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                   {categories.slice(0, 5).map((cat, i) => (
-                    <div
+                    <Link
                       key={cat.id}
+                      to={`/categories/${cat.id}`}
                       className={`card card-interactive animate-in stagger-${Math.min(i + 1, 6)}`}
-                      style={{ padding: 'var(--space-4) var(--space-5)' }}
+                      style={{ padding: 'var(--space-4) var(--space-5)', textDecoration: 'none', color: 'inherit' }}
+                      id={`dashboard-category-${cat.id}`}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
@@ -198,7 +200,7 @@ export default function DashboardPage() {
                         </div>
                         <ArrowRight size={16} style={{ color: 'var(--neutral-400)' }} />
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               )}
