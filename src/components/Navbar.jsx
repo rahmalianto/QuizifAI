@@ -53,7 +53,7 @@ export default function Navbar() {
               id="nav-generate"
             >
               <Sparkles size={18} />
-              <span>Generate</span>
+              <span>Create</span>
             </NavLink>
           </li>
           <li>

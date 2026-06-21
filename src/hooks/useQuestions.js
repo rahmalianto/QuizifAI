@@ -169,6 +169,70 @@ export function useQuestions() {
   };
 
   /**
+   * Save a single manual question to Supabase
+   */
+  const addManualQuestion = async ({
+    categoryId,
+    questionText,
+    answerType,
+    correctAnswers,
+    incorrectOptions,
+    tags = [],
+  }) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const questionRow = {
+        category_id: categoryId,
+        user_id: user.id,
+        question_text: questionText,
+        answer_type: answerType,
+        correct_answers: JSON.stringify(correctAnswers),
+        incorrect_options: incorrectOptions
+          ? JSON.stringify(incorrectOptions)
+          : null,
+        material_reference: 'Manual Entry',
+        current_score: 0,
+      };
+
+      const { data: insertedQuestion, error: insertError } = await supabase
+        .from('questions')
+        .insert(questionRow)
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+
+      // Insert tags if any
+      if (tags && tags.length > 0 && insertedQuestion) {
+        const tagRows = tags.map((tag) => ({
+          question_id: insertedQuestion.id,
+          tag_name: tag.trim(),
+        }));
+
+        const { error: tagError } = await supabase
+          .from('question_tags')
+          .insert(tagRows);
+
+        if (tagError) {
+          console.error('Error inserting tags for manual question:', tagError);
+        }
+      }
+
+      return insertedQuestion;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error saving manual question:', err);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
    * Clear generated questions
    */
   const clearGenerated = () => {
@@ -187,6 +251,8 @@ export function useQuestions() {
     removeGeneratedQuestion,
     setAllInclusion,
     saveQuestions,
+    addManualQuestion,
     clearGenerated,
   };
 }
+
