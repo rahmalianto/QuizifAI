@@ -10,8 +10,10 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../hooks/useAuth';
+import { useQuestions } from '../hooks/useQuestions';
 import Navbar from '../components/Navbar';
 import EmptyState from '../components/EmptyState';
+import EditQuestionModal from '../components/EditQuestionModal';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -23,6 +25,8 @@ export default function DashboardPage() {
   const [categories, setCategories] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const { updateQuestion, saving } = useQuestions();
 
   useEffect(() => {
     if (!user) return;
@@ -59,10 +63,24 @@ export default function DashboardPage() {
         // Fetch recent questions for activity feed
         const { data: recent } = await supabase
           .from('questions')
-          .select('id, question_text, answer_type, created_at, categories(name)')
+          .select('*, question_tags(tags(name)), categories(name)')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
           .limit(5);
+
+        const normalizedRecent = (recent || []).map((q) => ({
+          ...q,
+          correct_answers:
+            typeof q.correct_answers === 'string'
+              ? JSON.parse(q.correct_answers)
+              : q.correct_answers || [],
+          incorrect_options:
+            typeof q.incorrect_options === 'string'
+              ? JSON.parse(q.incorrect_options)
+              : q.incorrect_options || [],
+          tags: (q.question_tags || []).map((qt) => qt.tags?.name).filter(Boolean),
+          category_name: q.categories?.name,
+        }));
 
         setCategories(categoriesData);
         setStats({
@@ -70,7 +88,7 @@ export default function DashboardPage() {
           totalCategories: categoriesData.length,
           recentQuestions: recentQuestions || 0,
         });
-        setRecentActivity(recent || []);
+        setRecentActivity(normalizedRecent);
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
       } finally {
@@ -80,6 +98,19 @@ export default function DashboardPage() {
 
     fetchDashboardData();
   }, [user]);
+
+  const handleSaveEdit = async (updates) => {
+    try {
+      await updateQuestion(editingQuestion.id, updates);
+      setEditingQuestion(null);
+      // Update local state instead of refetching the whole dashboard
+      setRecentActivity((prev) => 
+        prev.map(q => q.id === editingQuestion.id ? { ...q, ...updates } : q)
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const greeting = () => {
     const hour = new Date().getHours();
@@ -234,8 +265,9 @@ export default function DashboardPage() {
                   {recentActivity.map((item, i) => (
                     <div
                       key={item.id}
-                      className={`card animate-in stagger-${Math.min(i + 1, 6)}`}
-                      style={{ padding: 'var(--space-3) var(--space-4)' }}
+                      className={`card card-interactive animate-in stagger-${Math.min(i + 1, 6)}`}
+                      style={{ padding: 'var(--space-3) var(--space-4)', cursor: 'pointer' }}
+                      onClick={() => setEditingQuestion(item)}
                     >
                       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-3)' }}>
                         <div
@@ -282,6 +314,16 @@ export default function DashboardPage() {
           </div>
         </div>
       </main>
+
+      {/* Edit Modal */}
+      {editingQuestion && (
+        <EditQuestionModal
+          question={editingQuestion}
+          saving={saving}
+          onSave={handleSaveEdit}
+          onClose={() => setEditingQuestion(null)}
+        />
+      )}
     </>
   );
 }

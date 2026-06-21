@@ -10,6 +10,7 @@ import CategoriesPage from './pages/CategoriesPage';
 import CategoryDetailPage from './pages/CategoryDetailPage';
 import PracticePage from './pages/PracticePage';
 import TagsPage from './pages/TagsPage';
+import QuestionsPage from './pages/QuestionsPage';
 
 function AuthRedirect({ children }) {
   const { user, loading } = useAuth();
@@ -86,14 +87,22 @@ function AppRoutes() {
         }
       />
       <Route
-        path="/tags"
-        element={
-          <ProtectedRoute>
-            <TagsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
+            path="/tags"
+            element={
+              <ProtectedRoute>
+                <TagsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/questions"
+            element={
+              <ProtectedRoute>
+                <QuestionsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
         path="/practice"
         element={
           <ProtectedRoute>
