@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Sparkles, FolderOpen, LogOut } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FolderOpen, LogOut, Dices } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
@@ -66,6 +66,18 @@ export default function Navbar() {
             >
               <FolderOpen size={18} />
               <span>Categories</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/practice"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+              id="nav-practice"
+            >
+              <Dices size={18} />
+              <span>Practice</span>
             </NavLink>
           </li>
         </ul>

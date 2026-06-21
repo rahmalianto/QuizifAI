@@ -233,6 +233,42 @@ export function useQuestions() {
   };
 
   /**
+   * Fetch all questions across all categories for the user
+   */
+  const fetchAllQuestions = useCallback(async () => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('questions')
+        .select('*, question_tags(tag_name)')
+        .eq('user_id', user.id);
+
+      if (fetchError) throw fetchError;
+
+      // Normalize
+      return (data || []).map((q) => ({
+        ...q,
+        correct_answers:
+          typeof q.correct_answers === 'string'
+            ? JSON.parse(q.correct_answers)
+            : q.correct_answers || [],
+        incorrect_options:
+          typeof q.incorrect_options === 'string'
+            ? JSON.parse(q.incorrect_options)
+            : q.incorrect_options || [],
+        tags: (q.question_tags || []).map((t) => t.tag_name),
+      }));
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching all questions:', err);
+      throw err;
+    }
+  }, [user]);
+
+  /**
    * Fetch all questions for a given category from Supabase
    */
   const fetchQuestionsByCategory = useCallback(async (categoryId) => {
@@ -382,6 +418,7 @@ export function useQuestions() {
     setAllInclusion,
     saveQuestions,
     addManualQuestion,
+    fetchAllQuestions,
     fetchQuestionsByCategory,
     updateQuestion,
     deleteQuestion,

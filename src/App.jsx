@@ -8,6 +8,7 @@ import DashboardPage from './pages/DashboardPage';
 import GeneratePage from './pages/GeneratePage';
 import CategoriesPage from './pages/CategoriesPage';
 import CategoryDetailPage from './pages/CategoryDetailPage';
+import PracticePage from './pages/PracticePage';
 
 function AuthRedirect({ children }) {
   const { user, loading } = useAuth();
@@ -80,6 +81,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <CategoryDetailPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/practice"
+        element={
+          <ProtectedRoute>
+            <PracticePage />
           </ProtectedRoute>
         }
       />
