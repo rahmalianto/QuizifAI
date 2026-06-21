@@ -13,6 +13,7 @@ export default function PracticePage() {
   const [currentIndex, setCurrentIndex] = useState(-1);
   const [showAnswer, setShowAnswer] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
+  const [currentOptions, setCurrentOptions] = useState([]);
 
   useEffect(() => {
     const loadQuestions = async () => {
@@ -34,9 +35,25 @@ export default function PracticePage() {
   const pickRandomQuestion = (pool) => {
     if (!pool || pool.length === 0) return;
     const randomIndex = Math.floor(Math.random() * pool.length);
+    const q = pool[randomIndex];
+    
+    // Determine options and shuffle them if needed
+    let options = [];
+    if (q.answer_type === 'TRUE_FALSE') {
+      options = ['True', 'False']; // Keep True/False in standard order
+    } else if (q.answer_type === 'MULTIPLE_CHOICE' || q.answer_type === 'CHECKBOX') {
+      options = [...(q.correct_answers || []), ...(q.incorrect_options || [])];
+      // Fisher-Yates shuffle
+      for (let i = options.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [options[i], options[j]] = [options[j], options[i]];
+      }
+    }
+
     setCurrentIndex(randomIndex);
     setShowAnswer(false);
     setSelectedAnswers([]);
+    setCurrentOptions(options);
   };
 
   const handleOptionClick = (opt) => {
@@ -94,18 +111,9 @@ export default function PracticePage() {
     if (!currentQuestion) return null;
     
     if (currentQuestion.answer_type === 'MULTIPLE_CHOICE' || currentQuestion.answer_type === 'CHECKBOX' || currentQuestion.answer_type === 'TRUE_FALSE') {
-      let allOptions = [];
-      if (currentQuestion.answer_type === 'TRUE_FALSE') {
-        allOptions = ['True', 'False'];
-      } else {
-        allOptions = [...(currentQuestion.correct_answers || []), ...(currentQuestion.incorrect_options || [])];
-      }
-      
-      const sortedOptions = currentQuestion.answer_type === 'TRUE_FALSE' ? allOptions : [...allOptions].sort();
-
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
-          {sortedOptions.map((opt, i) => {
+          {currentOptions.map((opt, i) => {
             const isCorrect = currentQuestion.correct_answers.includes(opt);
             const isSelected = selectedAnswers.includes(opt);
             
@@ -220,9 +228,23 @@ export default function PracticePage() {
               </span>
             </div>
             
-            <h3 style={{ fontSize: 'var(--text-xl)', lineHeight: '1.6', marginBottom: 'var(--space-6)', color: 'var(--neutral-900)' }}>
+            <h3 style={{ fontSize: 'var(--text-xl)', lineHeight: '1.6', marginBottom: 'var(--space-4)', color: 'var(--neutral-900)' }}>
               {currentQuestion?.question_text}
             </h3>
+            
+            {/* Category and Tags display */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-6)', alignItems: 'center' }}>
+              {currentQuestion?.category_name && (
+                <span className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-700)', border: '1px solid var(--neutral-200)' }}>
+                  📁 {currentQuestion.category_name}
+                </span>
+              )}
+              {currentQuestion?.tags?.map((tag, idx) => (
+                <span key={idx} className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-600)', border: '1px solid var(--neutral-200)' }}>
+                  # {tag}
+                </span>
+              ))}
+            </div>
             
             {renderOptions()}
             

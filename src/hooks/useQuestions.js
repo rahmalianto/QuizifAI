@@ -243,7 +243,7 @@ export function useQuestions() {
 
       const { data, error: fetchError } = await supabase
         .from('questions')
-        .select('*, question_tags(tag_name)')
+        .select('*, question_tags(tag_name), categories(name)')
         .eq('user_id', user.id);
 
       if (fetchError) throw fetchError;
@@ -260,6 +260,7 @@ export function useQuestions() {
             ? JSON.parse(q.incorrect_options)
             : q.incorrect_options || [],
         tags: (q.question_tags || []).map((t) => t.tag_name),
+        category_name: q.categories?.name,
       }));
     } catch (err) {
       setError(err.message);
