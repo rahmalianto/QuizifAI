@@ -262,15 +262,19 @@ export default function PracticePage() {
                   {currentQuestion?.answer_type?.replace('_', ' ')}
                 </span>
                 
-                {currentQuestion?.category_name && (
-                  <span className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-700)', border: '1px solid var(--neutral-200)' }}>
-                    📁 {currentQuestion.category_name}
-                  </span>
+                {currentQuestion?.category_name && currentQuestion?.category_id && (
+                  <Link to={`/categories/${currentQuestion.category_id}`} style={{ textDecoration: 'none' }}>
+                    <span className="badge badge-interactive" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-700)', border: '1px solid var(--neutral-200)', cursor: 'pointer' }}>
+                      📁 {currentQuestion.category_name}
+                    </span>
+                  </Link>
                 )}
                 {currentQuestion?.tags?.map((tag, idx) => (
-                  <span key={idx} className="badge" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-600)', border: '1px solid var(--neutral-200)' }}>
-                    # {tag}
-                  </span>
+                  <Link to="/tags" key={idx} style={{ textDecoration: 'none' }}>
+                    <span className="badge badge-interactive" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-600)', border: '1px solid var(--neutral-200)', cursor: 'pointer' }}>
+                      # {tag}
+                    </span>
+                  </Link>
                 ))}
               </div>
             </div>

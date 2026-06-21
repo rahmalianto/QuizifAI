@@ -179,8 +179,20 @@ export default function QuestionsPage() {
                             <span className={`badge badge-${ANSWER_TYPE_COLORS[q.answer_type] || 'neutral'}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
                               {QUESTION_TYPES[q.answer_type]?.label || q.answer_type}
                             </span>
-                            {q.category_name && (
-                              <span style={{ fontSize: '11px', color: 'var(--neutral-500)' }}>📁 {q.category_name}</span>
+                            {q.category_name && q.category_id && (
+                              <Link to={`/categories/${q.category_id}`} style={{ textDecoration: 'none' }}>
+                                <span className="badge-interactive" style={{ fontSize: '11px', color: 'var(--primary-600)', cursor: 'pointer' }}>📁 {q.category_name}</span>
+                              </Link>
+                            )}
+                            {(q.tags || []).slice(0, 3).map((tag) => (
+                              <Link to="/tags" key={tag} style={{ textDecoration: 'none' }}>
+                                <span className="badge badge-neutral badge-interactive" style={{ fontSize: '10px', padding: '2px 6px', cursor: 'pointer' }}>#{tag}</span>
+                              </Link>
+                            ))}
+                            {(q.tags || []).length > 3 && (
+                              <span style={{ fontSize: '10px', color: 'var(--neutral-400)' }}>
+                                +{q.tags.length - 3} more
+                              </span>
                             )}
                           </div>
                         </td>

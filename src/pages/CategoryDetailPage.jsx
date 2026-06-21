@@ -221,7 +221,9 @@ export default function CategoryDetailPage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
                           <span className={`badge badge-${badgeColor}`}>{typeLabel}</span>
                           {(q.tags || []).slice(0, 3).map((tag) => (
-                            <span key={tag} className="badge badge-neutral">{tag}</span>
+                            <Link to="/tags" key={tag} style={{ textDecoration: 'none' }}>
+                              <span className="badge badge-neutral badge-interactive" style={{ cursor: 'pointer' }}>#{tag}</span>
+                            </Link>
                           ))}
                           {(q.tags || []).length > 3 && (
                             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-400)' }}>
