@@ -141,7 +141,7 @@ export default function TagsPage() {
             </div>
           )}
 
-          {/* Grid */}
+          {/* Table */}
           {loading && !tags.length ? (
             <LoadingSpinner text="Loading tags..." />
           ) : tags.length === 0 ? (
@@ -158,40 +158,66 @@ export default function TagsPage() {
               />
             )
           ) : (
-            <div className="grid grid-cols-2 gap-4">
-              {tags.map((tag, i) => (
-                <div key={tag.id} className={`card animate-in stagger-${Math.min(i + 1, 6)}`} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--space-3)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <Tag size={18} color="var(--primary-600)" />
-                      <h3 style={{ margin: 0, color: 'var(--neutral-900)' }}>{tag.name}</h3>
-                    </div>
-                    <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
-                      <button onClick={() => handleEdit(tag)} className="btn-icon" title="Edit tag" style={{ padding: '4px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--neutral-500)' }}>
-                        <Edit2 size={16} />
-                      </button>
-                      <button onClick={() => handleDelete(tag.id)} className="btn-icon" title="Delete tag" style={{ padding: '4px', background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--danger-500)' }}>
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  {tag.description && (
-                    <p style={{ color: 'var(--neutral-600)', fontSize: 'var(--text-sm)', marginBottom: 'var(--space-3)', flex: 1 }}>
-                      {tag.description}
-                    </p>
-                  )}
-                  
-                  {tag.link && (
-                    <div style={{ marginTop: 'auto' }}>
-                      <a href={tag.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)', fontSize: 'var(--text-sm)', color: 'var(--primary-600)', textDecoration: 'none' }}>
-                        <LinkIcon size={14} />
-                        Resource Link
-                      </a>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="card animate-in" style={{ padding: 0, overflow: 'hidden' }}>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                  <thead style={{ background: 'var(--neutral-50)', borderBottom: '1px solid var(--border-light)' }}>
+                    <tr>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Tag Name</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)' }}>Description</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Related URL</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '15%' }}>Created At</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tags.map((tag) => (
+                      <tr key={tag.id} style={{ borderBottom: '1px solid var(--border-light)', ':hover': { backgroundColor: 'var(--neutral-50)' } }}>
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                            <Tag size={16} color="var(--primary-600)" />
+                            <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--neutral-900)' }}>{tag.name}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', color: 'var(--neutral-600)', fontSize: 'var(--text-sm)' }}>
+                          {tag.description || <span style={{ color: 'var(--neutral-400)', fontStyle: 'italic' }}>No description</span>}
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)' }}>
+                          {tag.link ? (
+                            <a href={tag.link} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-1)', color: 'var(--primary-600)', textDecoration: 'none' }}>
+                              <LinkIcon size={14} /> Link
+                            </a>
+                          ) : (
+                            <span style={{ color: 'var(--neutral-400)', fontStyle: 'italic' }}>None</span>
+                          )}
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
+                          {new Date(tag.created_at).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => handleEdit(tag)}
+                              title="Edit tag"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => handleDelete(tag.id)}
+                              title="Delete tag"
+                              style={{ color: 'var(--danger-500)' }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </div>
