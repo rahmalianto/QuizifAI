@@ -285,7 +285,8 @@ export function useQuestions() {
       const { data, error: fetchError } = await supabase
         .from('questions')
         .select('*, question_tags(tags(name)), categories(name)')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .is('deleted_at', null);
 
       if (fetchError) throw fetchError;
 
@@ -351,6 +352,7 @@ export function useQuestions() {
         .select('*, question_tags(tags(name))')
         .eq('category_id', categoryId)
         .eq('user_id', user.id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -469,7 +471,7 @@ export function useQuestions() {
 
       const { error: deleteError } = await supabase
         .from('questions')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', questionId)
         .eq('user_id', user.id);
 

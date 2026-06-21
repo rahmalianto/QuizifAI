@@ -22,6 +22,7 @@ export function useTags() {
         .from('tags')
         .select('*')
         .eq('user_id', user.id)
+        .is('deleted_at', null)
         .order('name', { ascending: true });
 
       if (fetchError) throw fetchError;
@@ -123,7 +124,7 @@ export function useTags() {
 
       const { error: deleteError } = await supabase
         .from('tags')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', tagId)
         .eq('user_id', user.id);
 

@@ -23,6 +23,8 @@ export function useCategories() {
           questions(count)
         `)
         .eq('user_id', user.id)
+        .is('deleted_at', null)
+        .is('questions.deleted_at', null)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -81,7 +83,7 @@ export function useCategories() {
   const deleteCategory = async (id) => {
     const { error } = await supabase
       .from('categories')
-      .delete()
+      .update({ deleted_at: new Date().toISOString() })
       .eq('id', id);
 
     if (error) throw error;

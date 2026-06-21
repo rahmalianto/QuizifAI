@@ -38,6 +38,8 @@ export default function DashboardPage() {
           .from('categories')
           .select('*, questions(count)')
           .eq('user_id', user.id)
+          .is('deleted_at', null)
+          .is('questions.deleted_at', null)
           .order('created_at', { ascending: false });
 
         const categoriesData = (cats || []).map((cat) => ({
@@ -49,7 +51,8 @@ export default function DashboardPage() {
         const { count: totalQuestions } = await supabase
           .from('questions')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .is('deleted_at', null);
 
         // Fetch questions created today
         const today = new Date();
@@ -58,6 +61,7 @@ export default function DashboardPage() {
           .from('questions')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
+          .is('deleted_at', null)
           .gte('created_at', today.toISOString());
 
         // Fetch recent questions for activity feed
@@ -65,6 +69,7 @@ export default function DashboardPage() {
           .from('questions')
           .select('*, question_tags(tags(name)), categories(name)')
           .eq('user_id', user.id)
+          .is('deleted_at', null)
           .order('created_at', { ascending: false })
           .limit(5);
 
