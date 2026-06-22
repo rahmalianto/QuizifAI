@@ -51,6 +51,26 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  /**
+   * Trigger Microsoft OAuth to connect OneNote.
+   * This performs a full-page redirect to Microsoft login,
+   * then returns back to the specified redirect path.
+   */
+  const connectMicrosoft = async (redirectPath = '/generate') => {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'azure',
+      options: {
+        scopes: 'openid email profile Notes.Read',
+        redirectTo: window.location.origin + redirectPath,
+      },
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  // Extract Microsoft Graph provider_token from the session (if available)
+  const providerToken = session?.provider_token || null;
+
   const value = {
     user,
     session,
@@ -58,6 +78,8 @@ export function AuthProvider({ children }) {
     signIn,
     signUp,
     signOut,
+    connectMicrosoft,
+    providerToken,
   };
 
   return (
