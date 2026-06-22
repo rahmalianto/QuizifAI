@@ -27,9 +27,9 @@ export const QUESTION_TYPES = {
 
 export const QUESTION_TYPE_LIST = Object.values(QUESTION_TYPES);
 
-export const DEFAULT_QUESTION_COUNT = 10;
-export const MIN_QUESTION_COUNT = 5;
-export const MAX_QUESTION_COUNT = 30;
+export const DEFAULT_QUESTION_COUNT = 5;
+export const MIN_QUESTION_COUNT = 1;
+export const MAX_QUESTION_COUNT = 10;
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 

@@ -58,6 +58,55 @@ export function useQuestions() {
   };
 
   /**
+   * Call the Supabase Edge Function to generate questions from an image
+   */
+  const generateQuestionsFromImage = async ({ imageBase64, mimeType, questionTypes, count, tags }) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setGenerating(true);
+      setError(null);
+      setGeneratedQuestions([]);
+
+      const { data, error: fnError } = await supabase.functions.invoke(
+        'generate-questions-from-image',
+        {
+          body: {
+            imageBase64,
+            mimeType,
+            questionTypes,
+            count,
+            tags,
+          },
+        }
+      );
+
+      if (fnError) throw fnError;
+
+      if (!data?.questions || !Array.isArray(data.questions)) {
+        throw new Error('Invalid response from question generator');
+      }
+
+      // Add temporary IDs — _included starts as null (pending) for one-by-one review
+      const questionsWithMeta = data.questions.map((q, index) => ({
+        ...q,
+        _tempId: `temp-${Date.now()}-${index}`,
+        _included: null, // null = pending review
+        tags: q.tags || tags || [],
+      }));
+
+      setGeneratedQuestions(questionsWithMeta);
+      return questionsWithMeta;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error generating questions from image:', err);
+      throw err;
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  /**
    * Update a question in the generated list (before saving)
    */
   const updateGeneratedQuestion = (tempId, updates) => {
@@ -497,10 +546,12 @@ export function useQuestions() {
     saving,
     error,
     generateQuestions,
+    generateQuestionsFromImage,
     updateGeneratedQuestion,
     toggleQuestionInclusion,
     removeGeneratedQuestion,
     setAllInclusion,
+    setGeneratedQuestions,
     saveQuestions,
     addManualQuestion,
     fetchAllQuestions,
