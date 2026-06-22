@@ -8,7 +8,6 @@
 //   supabase secrets set GEMINI_API_KEY=your-api-key-here
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const GEMINI_API_URL =
@@ -127,7 +126,9 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
     // Parse the JSON response
     let questions;
     try {
-      const parsed = JSON.parse(responseText);
+      // Strip markdown code blocks if the AI includes them
+      const cleanText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const parsed = JSON.parse(cleanText);
       questions = parsed.questions || parsed;
 
       if (!Array.isArray(questions)) {

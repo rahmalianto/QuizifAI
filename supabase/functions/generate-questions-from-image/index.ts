@@ -134,7 +134,9 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
     // Parse the JSON response
     let questions;
     try {
-      const parsed = JSON.parse(responseText);
+      // Strip markdown code blocks if the AI includes them
+      const cleanText = responseText.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const parsed = JSON.parse(cleanText);
       questions = parsed.questions || parsed;
 
       if (!Array.isArray(questions)) {

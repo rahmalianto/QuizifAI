@@ -167,6 +167,7 @@ export default function GeneratePage() {
       });
     } catch (err) {
       toast.error(err.message || 'Failed to generate questions');
+      setStep(1); // revert back to config
     }
   };
 
@@ -196,6 +197,7 @@ export default function GeneratePage() {
       });
     } catch (err) {
       toast.error(err.message || 'Failed to generate questions from image');
+      setStep(1); // revert back to config
     }
   };
 
@@ -223,6 +225,7 @@ export default function GeneratePage() {
       });
     } catch (err) {
       toast.error(err.message || 'Failed to generate questions from OneNote');
+      setStep(2); // revert back to config
     }
   };
 
@@ -874,6 +877,11 @@ export default function GeneratePage() {
                           step={step}
                           onSelectionChange={() => {}}
                           onPagesContentReady={(text) => {
+                            if (!text || text.trim().length === 0) {
+                              toast.error('No text could be extracted from the selected pages.');
+                            } else {
+                              toast.success(`Extracted ${text.length} characters.`);
+                            }
                             setOneNoteText(text);
                             setOneNoteFetchingContent(false);
                             setStep(2);

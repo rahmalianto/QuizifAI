@@ -52,12 +52,13 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Trigger Microsoft OAuth to connect OneNote.
-   * This performs a full-page redirect to Microsoft login,
-   * then returns back to the specified redirect path.
+   * Link Microsoft identity to the current user for OneNote access.
+   * Uses linkIdentity (not signInWithOAuth) so the Microsoft account
+   * is added to the EXISTING user, even if the emails differ
+   * (e.g., Gmail for QuizifAI + Hotmail for OneNote).
    */
   const connectMicrosoft = async (redirectPath = '/generate') => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.linkIdentity({
       provider: 'azure',
       options: {
         scopes: 'openid email profile Notes.Read',

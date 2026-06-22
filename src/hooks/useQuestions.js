@@ -32,7 +32,25 @@ export function useQuestions() {
         }
       );
 
-      if (fnError) throw fnError;
+      if (fnError) {
+        let errorMessage = fnError.message;
+        if (fnError.context && fnError.context.error) {
+          errorMessage = fnError.context.error;
+          if (fnError.context.details) {
+            errorMessage += `: ${fnError.context.details}`;
+          }
+        } else if (fnError.context && typeof fnError.context.text === 'function') {
+          const text = await fnError.context.text();
+          try {
+            const parsed = JSON.parse(text);
+            if (parsed.error) errorMessage = parsed.error;
+            if (parsed.details) errorMessage += `: ${parsed.details}`;
+          } catch (e) {
+            errorMessage = text;
+          }
+        }
+        throw new Error(errorMessage);
+      }
 
       if (!data?.questions || !Array.isArray(data.questions)) {
         throw new Error('Invalid response from question generator');
@@ -82,7 +100,25 @@ export function useQuestions() {
         }
       );
 
-      if (fnError) throw fnError;
+      if (fnError) {
+        let errorMessage = fnError.message;
+        if (fnError.context && fnError.context.error) {
+          errorMessage = fnError.context.error;
+          if (fnError.context.details) {
+            errorMessage += `: ${fnError.context.details}`;
+          }
+        } else if (fnError.context && typeof fnError.context.text === 'function') {
+          const text = await fnError.context.text();
+          try {
+            const parsed = JSON.parse(text);
+            if (parsed.error) errorMessage = parsed.error;
+            if (parsed.details) errorMessage += `: ${parsed.details}`;
+          } catch (e) {
+            errorMessage = text;
+          }
+        }
+        throw new Error(errorMessage);
+      }
 
       if (!data?.questions || !Array.isArray(data.questions)) {
         throw new Error('Invalid response from question generator');
