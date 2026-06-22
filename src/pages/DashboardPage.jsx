@@ -67,7 +67,7 @@ export default function DashboardPage() {
         // Fetch recent questions for activity feed
         const { data: recent } = await supabase
           .from('questions')
-          .select('*, question_tags(tags(name)), categories(name)')
+          .select('*, question_tags(tags(name, deleted_at)), categories(name)')
           .eq('user_id', user.id)
           .is('deleted_at', null)
           .order('created_at', { ascending: false })
@@ -83,7 +83,10 @@ export default function DashboardPage() {
             typeof q.incorrect_options === 'string'
               ? JSON.parse(q.incorrect_options)
               : q.incorrect_options || [],
-          tags: (q.question_tags || []).map((qt) => qt.tags?.name).filter(Boolean),
+          tags: (q.question_tags || [])
+            .filter((qt) => !qt.tags?.deleted_at)
+            .map((qt) => qt.tags?.name)
+            .filter(Boolean),
           category_name: q.categories?.name,
         }));
 
@@ -176,7 +179,7 @@ export default function DashboardPage() {
 
           <div className="dashboard-content-grid">
             {/* Categories Section */}
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-5)' }}>
                 <h3>Your Categories</h3>
                 <Link to="/categories" className="btn btn-ghost btn-sm" id="link-all-categories">
@@ -227,14 +230,14 @@ export default function DashboardPage() {
                           >
                             <FolderOpen size={16} />
                           </div>
-                          <div>
-                            <h5 style={{ fontSize: 'var(--text-sm)' }}>{cat.name}</h5>
+                          <div style={{ minWidth: 0 }}>
+                            <h5 style={{ fontSize: 'var(--text-sm)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.name}</h5>
                             <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-400)' }}>
                               {cat.question_count} questions
                             </span>
                           </div>
                         </div>
-                        <ArrowRight size={16} style={{ color: 'var(--neutral-400)' }} />
+                        <ArrowRight size={16} style={{ color: 'var(--neutral-400)', flexShrink: 0 }} />
                       </div>
                     </Link>
                   ))}
@@ -243,7 +246,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Recent Activity Section */}
-            <div>
+            <div style={{ minWidth: 0 }}>
               <div style={{ marginBottom: 'var(--space-5)' }}>
                 <h3>Recent Activity</h3>
               </div>
@@ -279,6 +282,8 @@ export default function DashboardPage() {
                           style={{
                             width: '32px',
                             height: '32px',
+                            minWidth: '32px',
+                            minHeight: '32px',
                             borderRadius: 'var(--radius-md)',
                             background: 'var(--info-50)',
                             display: 'flex',

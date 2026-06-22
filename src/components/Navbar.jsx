@@ -45,18 +45,7 @@ export default function Navbar() {
               <span>Dashboard</span>
             </NavLink>
           </li>
-          <li>
-            <NavLink
-              to="/generate"
-              className={({ isActive }) =>
-                `nav-link ${isActive ? 'active' : ''}`
-              }
-              id="nav-generate"
-            >
-              <Sparkles size={18} />
-              <span>Create</span>
-            </NavLink>
-          </li>
+
           <li>
             <NavLink
               to="/categories"
