@@ -60,7 +60,7 @@ export function useQuestions() {
   /**
    * Call the Supabase Edge Function to generate questions from an image
    */
-  const generateQuestionsFromImage = async ({ imageBase64, mimeType, questionTypes, count, tags }) => {
+  const generateQuestionsFromImage = async ({ imageBase64, mimeType, questionTypes, count, tags, prompt }) => {
     if (!user) throw new Error('Not authenticated');
 
     try {
@@ -77,6 +77,7 @@ export function useQuestions() {
             questionTypes,
             count,
             tags,
+            prompt,
           },
         }
       );

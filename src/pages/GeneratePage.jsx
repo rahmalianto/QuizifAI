@@ -83,6 +83,7 @@ export default function GeneratePage() {
 
   // Image mode state
   const [imageData, setImageData] = useState(null); // { base64, mimeType }
+  const [imagePrompt, setImagePrompt] = useState('');
 
   // Pre-select first category
   useEffect(() => {
@@ -156,6 +157,7 @@ export default function GeneratePage() {
         questionTypes: selectedTypes,
         count: questionCount,
         tags,
+        prompt: imagePrompt.trim(),
       });
     } catch (err) {
       toast.error(err.message || 'Failed to generate questions from image');
@@ -641,6 +643,19 @@ export default function GeneratePage() {
                           or drag and drop an image file below.
                         </p>
                         <ImageUpload onImageReady={setImageData} />
+
+                        <div className="input-group" style={{ marginTop: 'var(--space-6)' }}>
+                          <label htmlFor="image-prompt-input">
+                            Additional Context (Optional)
+                          </label>
+                          <textarea
+                            id="image-prompt-input"
+                            value={imagePrompt}
+                            onChange={(e) => setImagePrompt(e.target.value)}
+                            placeholder="Add any specific instructions for the AI (e.g., 'Focus only on the bold text', 'Translate these questions to Spanish')"
+                            style={{ minHeight: '80px' }}
+                          />
+                        </div>
                       </div>
 
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>

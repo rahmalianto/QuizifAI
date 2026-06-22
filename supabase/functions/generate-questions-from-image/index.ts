@@ -36,7 +36,7 @@ serve(async (req: Request) => {
     }
 
     // Parse request body
-    const { imageBase64, mimeType, questionTypes, count, tags } = await req.json();
+    const { imageBase64, mimeType, questionTypes, count, tags, prompt } = await req.json();
 
     if (!imageBase64 || !mimeType || !questionTypes || !count) {
       return new Response(
@@ -96,7 +96,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
                 },
               },
               {
-                text: `${systemPrompt}\n\nAnalyze the image above and generate ${count} questions now.`,
+                text: `${systemPrompt}\n\n${prompt ? `ADDITIONAL CONTEXT FROM USER:\n${prompt}\n\n` : ''}Analyze the image above and generate ${count} questions now.`,
               },
             ],
           },
@@ -162,8 +162,8 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
         q.answer_type === "SHORT_ANSWER" || q.answer_type === "LONG_ANSWER"
           ? null
           : Array.isArray(q.incorrect_options)
-          ? q.incorrect_options
-          : null,
+            ? q.incorrect_options
+            : null,
       material_reference: q.material_reference || null,
       tags: Array.isArray(q.tags) ? q.tags : tags || [],
     }));
