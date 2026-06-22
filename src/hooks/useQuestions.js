@@ -323,6 +323,58 @@ export function useQuestions() {
   };
 
   /**
+   * Fetch practice configuration
+   */
+  const fetchPracticeConfiguration = useCallback(async () => {
+    try {
+      setError(null);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('practice_configuration')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching practice configuration:', err);
+      return null;
+    }
+  }, []);
+
+  /**
+   * Save practice configuration
+   */
+  const savePracticeConfiguration = useCallback(async (categoryIds, tagNames, questionCount) => {
+    try {
+      setError(null);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { error } = await supabase
+        .from('practice_configuration')
+        .upsert({
+          user_id: user.id,
+          category: categoryIds,
+          tag: tagNames,
+          question_count: questionCount,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id' });
+
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error saving practice configuration:', err);
+      return false;
+    }
+  }, []);
+
+  /**
    * Fetch all questions across all categories for the user
    */
   const fetchAllQuestions = useCallback(async () => {
@@ -554,6 +606,8 @@ export function useQuestions() {
     setGeneratedQuestions,
     saveQuestions,
     addManualQuestion,
+    fetchPracticeConfiguration,
+    savePracticeConfiguration,
     fetchAllQuestions,
     savePracticeActivity,
     fetchQuestionsByCategory,
