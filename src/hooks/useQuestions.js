@@ -385,7 +385,7 @@ export function useQuestions() {
 
       const { data, error: fetchError } = await supabase
         .from('questions')
-        .select('*, question_tags(tags(name)), categories(name)')
+        .select('*, question_tags(tags(name, deleted_at)), categories(name)')
         .eq('user_id', user.id)
         .is('deleted_at', null);
 
@@ -402,7 +402,10 @@ export function useQuestions() {
           typeof q.incorrect_options === 'string'
             ? JSON.parse(q.incorrect_options)
             : q.incorrect_options || [],
-        tags: (q.question_tags || []).map((qt) => qt.tags?.name).filter(Boolean),
+        tags: (q.question_tags || [])
+          .filter((qt) => !qt.tags?.deleted_at)
+          .map((qt) => qt.tags?.name)
+          .filter(Boolean),
         category_name: q.categories?.name,
       }));
     } catch (err) {
@@ -450,7 +453,7 @@ export function useQuestions() {
 
       const { data, error: fetchError } = await supabase
         .from('questions')
-        .select('*, question_tags(tags(name))')
+        .select('*, question_tags(tags(name, deleted_at))')
         .eq('category_id', categoryId)
         .eq('user_id', user.id)
         .is('deleted_at', null)
@@ -469,7 +472,10 @@ export function useQuestions() {
           typeof q.incorrect_options === 'string'
             ? JSON.parse(q.incorrect_options)
             : q.incorrect_options || [],
-        tags: (q.question_tags || []).map((qt) => qt.tags?.name).filter(Boolean),
+        tags: (q.question_tags || [])
+          .filter((qt) => !qt.tags?.deleted_at)
+          .map((qt) => qt.tags?.name)
+          .filter(Boolean),
       }));
     } catch (err) {
       setError(err.message);
