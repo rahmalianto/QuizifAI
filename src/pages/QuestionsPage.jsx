@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { HelpCircle, Edit3, Trash2, Plus, Search } from 'lucide-react';
+import { HelpCircle, Edit3, Trash2, Plus, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -29,6 +29,7 @@ export default function QuestionsPage() {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
 
   // Bulk Actions State
   const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
@@ -112,8 +113,48 @@ export default function QuestionsPage() {
     );
   });
 
-  const isAllSelected = filteredQuestions.length > 0 && selectedQuestionIds.length === filteredQuestions.length;
-  const isSomeSelected = selectedQuestionIds.length > 0 && selectedQuestionIds.length < filteredQuestions.length;
+  const sortedQuestions = [...filteredQuestions].sort((a, b) => {
+    if (!sortConfig.key) return 0;
+    
+    let aValue = a[sortConfig.key];
+    let bValue = b[sortConfig.key];
+
+    // Handle nulls/undefined for correct sorting
+    if (aValue == null) aValue = '';
+    if (bValue == null) bValue = '';
+
+    // Convert strings to lowercase for case-insensitive sorting
+    if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+    if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+    if (aValue < bValue) {
+      return sortConfig.direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return sortConfig.direction === 'asc' ? 1 : -1;
+    }
+    return 0;
+  });
+
+  const isAllSelected = sortedQuestions.length > 0 && selectedQuestionIds.length === sortedQuestions.length;
+  const isSomeSelected = selectedQuestionIds.length > 0 && selectedQuestionIds.length < sortedQuestions.length;
+
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) {
+      return <div style={{ width: '14px', height: '14px', display: 'inline-block', marginLeft: '4px' }} />;
+    }
+    return sortConfig.direction === 'asc' ? 
+      <ChevronUp size={14} style={{ display: 'inline', marginLeft: '4px' }} /> : 
+      <ChevronDown size={14} style={{ display: 'inline', marginLeft: '4px' }} />;
+  };
 
   const handleBulkCategory = async (categoryId) => {
     try {
@@ -229,7 +270,7 @@ export default function QuestionsPage() {
               )}
             </div>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
-              Showing {filteredQuestions.length} of {questions.length} questions
+              Showing {sortedQuestions.length} of {questions.length} questions
             </div>
           </div>
 
@@ -247,7 +288,7 @@ export default function QuestionsPage() {
                 </Link>
               }
             />
-          ) : filteredQuestions.length === 0 ? (
+          ) : sortedQuestions.length === 0 ? (
             <EmptyState
               icon={Search}
               title="No matching questions"
@@ -268,16 +309,41 @@ export default function QuestionsPage() {
                           style={{ cursor: 'pointer' }}
                         />
                       </th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)' }}>Question</th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Correct Answer</th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%' }}>Score</th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%' }}>Created At</th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%' }}>Updated At</th>
+                      <th 
+                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleSort('question_text')}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>Question <SortIcon columnKey="question_text" /></div>
+                      </th>
+                      <th 
+                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleSort('correct_answers')}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>Correct Answer <SortIcon columnKey="correct_answers" /></div>
+                      </th>
+                      <th 
+                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleSort('current_score')}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>Score <SortIcon columnKey="current_score" /></div>
+                      </th>
+                      <th 
+                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleSort('created_at')}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>Created At <SortIcon columnKey="created_at" /></div>
+                      </th>
+                      <th 
+                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%', cursor: 'pointer', userSelect: 'none' }}
+                        onClick={() => handleSort('updated_at')}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center' }}>Updated At <SortIcon columnKey="updated_at" /></div>
+                      </th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredQuestions.map((q) => (
+                    {sortedQuestions.map((q) => (
                       <tr 
                         key={q.id} 
                         style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background-color 0.2s', backgroundColor: selectedQuestionIds.includes(q.id) ? 'var(--primary-50)' : 'transparent' }}
