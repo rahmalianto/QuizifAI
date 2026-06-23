@@ -68,6 +68,7 @@ RULES:
 8. The "material_reference" field must contain the most relevant sentence or phrase from the image content that supports this question.
 9. Questions should test understanding, not just recall. Include a mix of difficulty levels.
 10. Distribute question types roughly evenly across the allowed types.
+11. Frame the questions generally. Do NOT use phrases like "according to the chart", "based on the image", or "in the diagram". Instead, use specific context (e.g., if it's a chart about 'Global Sales', ask "What were the Global Sales in 2023?"). The questions should be self-contained.
 
 OUTPUT FORMAT:
 Return a JSON object with a single "questions" array. Each question object must have:

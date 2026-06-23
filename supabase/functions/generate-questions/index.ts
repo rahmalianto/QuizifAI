@@ -66,6 +66,7 @@ RULES:
 8. The "material_reference" field must contain the most relevant sentence or phrase from the source text that supports this question.
 9. Questions should test understanding, not just recall. Include a mix of difficulty levels.
 10. Distribute question types roughly evenly across the allowed types.
+11. Frame the questions generally. Do NOT use phrases like "according to the study material", "in the provided text", or "based on the article". The questions should be self-contained and sound like general knowledge questions.
 
 OUTPUT FORMAT:
 Return a JSON object with a single "questions" array. Each question object must have:
