@@ -5,6 +5,9 @@ import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import EditQuestionModal from '../components/EditQuestionModal';
+import BulkCategoryModal from '../components/BulkCategoryModal';
+import BulkTagsModal from '../components/BulkTagsModal';
+import BulkDeleteModal from '../components/BulkDeleteModal';
 import { useQuestions } from '../hooks/useQuestions';
 import { ANSWER_TYPE_COLORS, QUESTION_TYPES } from '../lib/constants';
 import toast from 'react-hot-toast';
@@ -15,6 +18,10 @@ export default function QuestionsPage() {
     fetchAllQuestions,
     updateQuestion,
     deleteQuestion,
+    bulkUpdateCategory,
+    bulkAddTags,
+    bulkRemoveTags,
+    bulkDeleteQuestions,
   } = useQuestions();
 
   const [questions, setQuestions] = useState([]);
@@ -22,6 +29,10 @@ export default function QuestionsPage() {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Bulk Actions State
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
+  const [bulkModal, setBulkModal] = useState(null); // 'category', 'tags', 'delete'
 
   const loadQuestions = useCallback(async () => {
     try {
@@ -44,8 +55,23 @@ export default function QuestionsPage() {
   };
 
   const handleRowClick = (question, e) => {
-    if (e.target.closest('button') || e.target.closest('a')) return;
+    // Ignore clicks on buttons, links, or the checkbox itself
+    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input[type="checkbox"]')) return;
     handleEdit(question);
+  };
+
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedQuestionIds(filteredQuestions.map(q => q.id));
+    } else {
+      setSelectedQuestionIds([]);
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedQuestionIds(prev => 
+      prev.includes(id) ? prev.filter(qId => qId !== id) : [...prev, id]
+    );
   };
 
   const handleSaveEdit = async (updates) => {
@@ -86,6 +112,55 @@ export default function QuestionsPage() {
     );
   });
 
+  const isAllSelected = filteredQuestions.length > 0 && selectedQuestionIds.length === filteredQuestions.length;
+  const isSomeSelected = selectedQuestionIds.length > 0 && selectedQuestionIds.length < filteredQuestions.length;
+
+  const handleBulkCategory = async (categoryId) => {
+    try {
+      await bulkUpdateCategory(selectedQuestionIds, categoryId);
+      toast.success('Questions moved successfully');
+      setBulkModal(null);
+      setSelectedQuestionIds([]);
+      await loadQuestions();
+    } catch (err) {
+      toast.error(err.message || 'Failed to move questions');
+    }
+  };
+
+  const handleBulkAddTags = async (tagsToAdd) => {
+    try {
+      await bulkAddTags(selectedQuestionIds, tagsToAdd);
+      toast.success('Tags added successfully');
+      setBulkModal(null);
+      await loadQuestions();
+    } catch (err) {
+      toast.error(err.message || 'Failed to add tags');
+    }
+  };
+
+  const handleBulkRemoveTags = async (tagsToRemove) => {
+    try {
+      await bulkRemoveTags(selectedQuestionIds, tagsToRemove);
+      toast.success('Tags removed successfully');
+      setBulkModal(null);
+      await loadQuestions();
+    } catch (err) {
+      toast.error(err.message || 'Failed to remove tags');
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      await bulkDeleteQuestions(selectedQuestionIds);
+      toast.success(`${selectedQuestionIds.length} questions deleted`);
+      setBulkModal(null);
+      setSelectedQuestionIds([]);
+      await loadQuestions();
+    } catch (err) {
+      toast.error(err.message || 'Failed to delete questions');
+    }
+  };
+
   return (
     <>
       <Navbar />
@@ -113,26 +188,45 @@ export default function QuestionsPage() {
               flexWrap: 'wrap',
             }}
           >
-            <div style={{ position: 'relative', flex: 1, maxWidth: '360px' }}>
-              <Search
-                size={16}
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: 'var(--neutral-400)',
-                  pointerEvents: 'none',
-                }}
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search questions by text, tag, category..."
-                style={{ paddingLeft: '36px', width: '100%' }}
-                id="search-all-questions-input"
-              />
+            <div style={{ position: 'relative', flex: 1, maxWidth: '600px', display: 'flex', gap: 'var(--space-4)', alignItems: 'center' }}>
+              <div style={{ position: 'relative', flex: 1, maxWidth: '360px' }}>
+                <Search
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: 'var(--neutral-400)',
+                    pointerEvents: 'none',
+                  }}
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search questions by text, tag, category..."
+                  style={{ paddingLeft: '36px', width: '100%' }}
+                  id="search-all-questions-input"
+                />
+              </div>
+
+              {selectedQuestionIds.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', color: 'var(--primary-700)', padding: '0 var(--space-2)' }}>
+                    {selectedQuestionIds.length} selected
+                  </span>
+                  <button className="btn btn-outline btn-sm" onClick={() => setBulkModal('category')}>
+                    Move
+                  </button>
+                  <button className="btn btn-outline btn-sm" onClick={() => setBulkModal('tags')}>
+                    Tags
+                  </button>
+                  <button className="btn btn-danger btn-sm" onClick={() => setBulkModal('delete')}>
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
               Showing {filteredQuestions.length} of {questions.length} questions
@@ -165,6 +259,15 @@ export default function QuestionsPage() {
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                   <thead style={{ background: 'var(--neutral-50)', borderBottom: '1px solid var(--border-light)' }}>
                     <tr>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', width: '40px' }}>
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          ref={input => { if (input) input.indeterminate = isSomeSelected; }}
+                          onChange={handleSelectAll}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)' }}>Question</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Correct Answer</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%' }}>Score</th>
@@ -177,10 +280,18 @@ export default function QuestionsPage() {
                     {filteredQuestions.map((q) => (
                       <tr 
                         key={q.id} 
-                        style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background-color 0.2s' }}
+                        style={{ borderBottom: '1px solid var(--border-light)', cursor: 'pointer', transition: 'background-color 0.2s', backgroundColor: selectedQuestionIds.includes(q.id) ? 'var(--primary-50)' : 'transparent' }}
                         onClick={(e) => handleRowClick(q, e)}
                         className="table-row-hover"
                       >
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedQuestionIds.includes(q.id)}
+                            onChange={() => handleSelectRow(q.id)}
+                            style={{ cursor: 'pointer', marginTop: '4px' }}
+                          />
+                        </td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
                           <div style={{ marginBottom: 'var(--space-1)', color: 'var(--neutral-900)', fontWeight: 'var(--weight-medium)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                             {q.question_text}
@@ -254,6 +365,31 @@ export default function QuestionsPage() {
           saving={saving}
           onSave={handleSaveEdit}
           onClose={() => setEditingQuestion(null)}
+        />
+      )}
+
+      {/* Bulk Modals */}
+      {bulkModal === 'category' && (
+        <BulkCategoryModal
+          onClose={() => setBulkModal(null)}
+          onConfirm={handleBulkCategory}
+        />
+      )}
+      
+      {bulkModal === 'tags' && (
+        <BulkTagsModal
+          selectedQuestions={questions.filter(q => selectedQuestionIds.includes(q.id))}
+          onClose={() => setBulkModal(null)}
+          onAddTags={handleBulkAddTags}
+          onRemoveTags={handleBulkRemoveTags}
+        />
+      )}
+
+      {bulkModal === 'delete' && (
+        <BulkDeleteModal
+          count={selectedQuestionIds.length}
+          onClose={() => setBulkModal(null)}
+          onConfirm={handleBulkDelete}
         />
       )}
     </>

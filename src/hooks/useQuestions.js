@@ -635,6 +635,163 @@ export function useQuestions() {
     setError(null);
   };
 
+  /**
+   * Bulk update category for multiple questions
+   */
+  const bulkUpdateCategory = async (questionIds, categoryId) => {
+    if (!user) throw new Error('Not authenticated');
+    if (!questionIds?.length) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const { error: updateError } = await supabase
+        .from('questions')
+        .update({ 
+          category_id: categoryId,
+          updated_at: new Date().toISOString()
+        })
+        .in('id', questionIds)
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error bulk updating category:', err);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Bulk add tags to multiple questions
+   */
+  const bulkAddTags = async (questionIds, tagsToAdd) => {
+    if (!user) throw new Error('Not authenticated');
+    if (!questionIds?.length || !tagsToAdd?.length) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const uniqueTagNames = [...new Set(tagsToAdd)].map(t => t.trim().toLowerCase()).filter(Boolean);
+      if (uniqueTagNames.length === 0) return;
+
+      // 1. Upsert the tags to ensure they exist
+      const { data: upsertedTags, error: tagsError } = await supabase
+        .from('tags')
+        .upsert(
+          uniqueTagNames.map((name) => ({ user_id: user.id, name })),
+          { onConflict: 'user_id,name' }
+        )
+        .select();
+
+      if (tagsError) throw tagsError;
+
+      // 2. Fetch existing relations to avoid duplicates (optional but cleaner)
+      // Or we can just insert and let constraints handle it if we had a unique constraint on (question_id, tag_id).
+      // Let's manually filter or just insert ignore. Since Supabase insert might throw on duplicate, 
+      // we'll fetch existing first.
+      const { data: existingRelations } = await supabase
+        .from('question_tags')
+        .select('question_id, tag_id')
+        .in('question_id', questionIds)
+        .in('tag_id', upsertedTags.map(t => t.id));
+
+      const existingSet = new Set((existingRelations || []).map(r => `${r.question_id}-${r.tag_id}`));
+
+      const newRelations = [];
+      questionIds.forEach(qId => {
+        upsertedTags.forEach(tag => {
+          if (!existingSet.has(`${qId}-${tag.id}`)) {
+            newRelations.push({
+              question_id: qId,
+              tag_id: tag.id
+            });
+          }
+        });
+      });
+
+      if (newRelations.length > 0) {
+        const { error: insertError } = await supabase
+          .from('question_tags')
+          .insert(newRelations);
+          
+        if (insertError) throw insertError;
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error bulk adding tags:', err);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Bulk remove tags from multiple questions
+   */
+  const bulkRemoveTags = async (questionIds, tagsToRemove) => {
+    if (!user) throw new Error('Not authenticated');
+    if (!questionIds?.length || !tagsToRemove?.length) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      // Need to find the tag IDs for these names
+      const tagNames = tagsToRemove.map(t => t.trim().toLowerCase());
+      const { data: tagsInfo } = await supabase
+        .from('tags')
+        .select('id')
+        .eq('user_id', user.id)
+        .in('name', tagNames);
+
+      if (tagsInfo && tagsInfo.length > 0) {
+        const tagIds = tagsInfo.map(t => t.id);
+        const { error: deleteError } = await supabase
+          .from('question_tags')
+          .delete()
+          .in('question_id', questionIds)
+          .in('tag_id', tagIds);
+
+        if (deleteError) throw deleteError;
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Error bulk removing tags:', err);
+      throw err;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /**
+   * Bulk delete questions
+   */
+  const bulkDeleteQuestions = async (questionIds) => {
+    if (!user) throw new Error('Not authenticated');
+    if (!questionIds?.length) return;
+
+    try {
+      setError(null);
+
+      const { error: deleteError } = await supabase
+        .from('questions')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', questionIds)
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+    } catch (err) {
+      setError(err.message);
+      console.error('Error bulk deleting questions:', err);
+      throw err;
+    }
+  };
+
   return {
     generatedQuestions,
     generating,
@@ -656,6 +813,10 @@ export function useQuestions() {
     fetchQuestionsByCategory,
     updateQuestion,
     deleteQuestion,
+    bulkUpdateCategory,
+    bulkAddTags,
+    bulkRemoveTags,
+    bulkDeleteQuestions,
     clearGenerated,
   };
 }
