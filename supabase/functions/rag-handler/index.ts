@@ -44,13 +44,13 @@ serve(async (req) => {
       const embeddings = [];
       for (const chunk of chunks) {
         const geminiRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${GEMINI_API_KEY}`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              model: "models/text-embedding-004",
               content: { parts: [{ text: chunk }] },
+              outputDimensionality: 2000,
             }),
           }
         );
@@ -82,13 +82,13 @@ serve(async (req) => {
 
       // 1. Generate embedding for the query
       const geminiEmbedRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent?key=${GEMINI_API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            model: "models/text-embedding-004",
             content: { parts: [{ text: query }] },
+            outputDimensionality: 2000,
           }),
         }
       );

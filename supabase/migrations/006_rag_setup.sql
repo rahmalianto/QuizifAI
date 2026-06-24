@@ -9,7 +9,7 @@ create table if not exists public.onenote_embeddings (
   user_id uuid references auth.users not null default auth.uid(),
   page_id text not null,
   content text not null,
-  embedding vector(768),
+  embedding vector(2000),
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -42,7 +42,7 @@ create index on public.onenote_embeddings using hnsw (embedding vector_cosine_op
 
 -- Create a function to similarity search for chunks
 create or replace function public.match_page_chunks (
-  query_embedding vector(768),
+  query_embedding vector(2000),
   match_threshold float,
   match_count int
 )
