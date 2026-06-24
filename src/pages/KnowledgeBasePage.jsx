@@ -78,7 +78,7 @@ export default function KnowledgeBasePage() {
               <p style={{ color: 'var(--neutral-500)', marginBottom: 'var(--space-6)' }}>
                 You need to connect your Microsoft account to browse OneNote.
               </p>
-              <button className="btn btn-primary" onClick={connectMicrosoft}>
+              <button className="btn btn-primary" onClick={() => connectMicrosoft('/knowledge-base')}>
                 Sign in with Microsoft
               </button>
             </div>
