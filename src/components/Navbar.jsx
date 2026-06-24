@@ -1,5 +1,5 @@
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Sparkles, FolderOpen, LogOut, Dices, Tag, HelpCircle } from 'lucide-react';
+import { LayoutDashboard, Sparkles, FolderOpen, LogOut, Dices, Tag, HelpCircle, BookOpen, MessageSquare } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import toast from 'react-hot-toast';
 
@@ -92,6 +92,30 @@ export default function Navbar() {
             >
               <Dices size={18} />
               <span>Practice</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/knowledge-base"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+              id="nav-knowledge-base"
+            >
+              <BookOpen size={18} />
+              <span>Knowledge Base</span>
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                `nav-link ${isActive ? 'active' : ''}`
+              }
+              id="nav-chat"
+            >
+              <MessageSquare size={18} />
+              <span>Chat</span>
             </NavLink>
           </li>
         </ul>

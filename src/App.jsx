@@ -11,6 +11,8 @@ import CategoryDetailPage from './pages/CategoryDetailPage';
 import PracticePage from './pages/PracticePage';
 import TagsPage from './pages/TagsPage';
 import QuestionsPage from './pages/QuestionsPage';
+import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import ChatPage from './pages/ChatPage';
 
 function AuthRedirect({ children }) {
   const { user, loading } = useAuth();
@@ -107,6 +109,22 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <PracticePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/knowledge-base"
+        element={
+          <ProtectedRoute>
+            <KnowledgeBasePage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/chat"
+        element={
+          <ProtectedRoute>
+            <ChatPage />
           </ProtectedRoute>
         }
       />
