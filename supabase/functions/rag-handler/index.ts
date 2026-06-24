@@ -77,8 +77,31 @@ serve(async (req) => {
       });
 
     } else if (action === "chat") {
-      const { query } = body;
+      const { query, sessionId } = body;
       if (!query) throw new Error("Missing query");
+
+      const userRes = await supabaseClient.auth.getUser();
+      const userId = userRes.data.user?.id;
+      if (!userId) throw new Error("Unauthorized");
+
+      let activeSessionId = sessionId;
+      if (!activeSessionId) {
+        const title = query.length > 40 ? query.substring(0, 40) + '...' : query;
+        const { data: sessionData, error: sessionErr } = await supabaseClient
+          .from("chat_sessions")
+          .insert({ user_id: userId, title })
+          .select("id")
+          .single();
+        if (sessionErr) throw sessionErr;
+        activeSessionId = sessionData.id;
+      }
+
+      await supabaseClient.from("chat_messages").insert({
+        session_id: activeSessionId,
+        user_id: userId,
+        role: "user",
+        content: query
+      });
 
       // 1. Generate embedding for the query
       const geminiEmbedRes = await fetch(
@@ -138,7 +161,15 @@ Question: ${query}`;
 
       const answer = chatData.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
 
-      return new Response(JSON.stringify({ answer, context: matches }), {
+      await supabaseClient.from("chat_messages").insert({
+        session_id: activeSessionId,
+        user_id: userId,
+        role: "assistant",
+        content: answer,
+        context_used: matches
+      });
+
+      return new Response(JSON.stringify({ answer, context: matches, sessionId: activeSessionId }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
