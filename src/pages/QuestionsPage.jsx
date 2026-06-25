@@ -56,8 +56,18 @@ export default function QuestionsPage() {
   };
 
   const handleRowClick = (question, e) => {
-    // Ignore clicks on buttons, links, or the checkbox itself
-    if (e.target.closest('button') || e.target.closest('a') || e.target.closest('input[type="checkbox"]')) return;
+    // Ignore clicks on buttons or links
+    if (e.target.closest('button') || e.target.closest('a')) return;
+
+    // If click was inside the select column
+    if (e.target.closest('.select-column')) {
+      // If they didn't click the checkbox itself (which handles its own onChange), manually toggle
+      if (!e.target.closest('input[type="checkbox"]')) {
+        handleSelectRow(question.id);
+      }
+      return;
+    }
+
     handleEdit(question);
   };
 
@@ -350,7 +360,7 @@ export default function QuestionsPage() {
                         onClick={(e) => handleRowClick(q, e)}
                         className="table-row-hover"
                       >
-                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
+                        <td className="select-column" style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', cursor: 'pointer' }}>
                           <input
                             type="checkbox"
                             checked={selectedQuestionIds.includes(q.id)}
