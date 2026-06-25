@@ -191,20 +191,13 @@ export default function QuestionsPage() {
   };
 
   const handleBulkDelete = async () => {
-    alert("1. handleBulkDelete started");
     try {
-      alert("2. Calling bulkDeleteQuestions with IDs: " + selectedQuestionIds.join(', '));
       await bulkDeleteQuestions(selectedQuestionIds);
-      alert("3. bulkDeleteQuestions finished successfully");
       toast.success(`${selectedQuestionIds.length} questions deleted`);
-      alert("4. Showing success toast");
       setBulkModal(null);
       setSelectedQuestionIds([]);
-      alert("5. Calling loadQuestions");
       await loadQuestions();
-      alert("6. loadQuestions finished");
     } catch (err) {
-      alert("ERROR: " + err.message);
       toast.error(err.message || 'Failed to delete questions');
     }
   };
