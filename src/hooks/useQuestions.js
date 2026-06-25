@@ -646,16 +646,21 @@ export function useQuestions() {
       setSaving(true);
       setError(null);
 
-      const { error: updateError } = await supabase
-        .from('questions')
-        .update({ 
-          category_id: categoryId,
-          updated_at: new Date().toISOString()
-        })
-        .in('id', questionIds)
-        .eq('user_id', user.id);
+      const promises = questionIds.map(id => 
+        supabase
+          .from('questions')
+          .update({ 
+            category_id: categoryId,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', id)
+          .eq('user_id', user.id)
+      );
 
-      if (updateError) throw updateError;
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error).map(r => r.error);
+
+      if (errors.length > 0) throw errors[0];
     } catch (err) {
       setError(err.message);
       console.error('Error bulk updating category:', err);
@@ -778,13 +783,19 @@ export function useQuestions() {
     try {
       setError(null);
 
-      const { error: deleteError } = await supabase
-        .from('questions')
-        .update({ deleted_at: new Date().toISOString() })
-        .in('id', questionIds)
-        .eq('user_id', user.id);
+      // Workaround: perform concurrent single updates to bypass any .in() RLS/PostgREST issues
+      const promises = questionIds.map(id => 
+        supabase
+          .from('questions')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', id)
+          .eq('user_id', user.id)
+      );
+      
+      const results = await Promise.all(promises);
+      const errors = results.filter(r => r.error).map(r => r.error);
 
-      if (deleteError) throw deleteError;
+      if (errors.length > 0) throw errors[0];
     } catch (err) {
       setError(err.message);
       console.error('Error bulk deleting questions:', err);
