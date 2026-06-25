@@ -11,7 +11,7 @@ export default function BulkDeleteModal({ count, onClose, onConfirm }) {
   };
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-overlay">
       <div className="modal-content animate-in" style={{ maxWidth: '400px' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>

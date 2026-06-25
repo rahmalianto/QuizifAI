@@ -61,7 +61,7 @@ export default function BulkTagsModal({ selectedQuestions, onClose, onAddTags, o
   };
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-overlay">
       <div className="modal-content animate-in" style={{ maxWidth: '450px' }}>
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
