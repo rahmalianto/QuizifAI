@@ -13,6 +13,8 @@ import TagsPage from './pages/TagsPage';
 import QuestionsPage from './pages/QuestionsPage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import ChatPage from './pages/ChatPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import UpdatePasswordPage from './pages/UpdatePasswordPage';
 
 function AuthRedirect({ children }) {
   const { user, loading } = useAuth();
@@ -53,6 +55,18 @@ function AppRoutes() {
             <RegisterPage />
           </AuthRedirect>
         }
+      />
+      <Route
+        path="/forgot-password"
+        element={
+          <AuthRedirect>
+            <ForgotPasswordPage />
+          </AuthRedirect>
+        }
+      />
+      <Route
+        path="/update-password"
+        element={<UpdatePasswordPage />}
       />
 
       {/* Protected routes */}

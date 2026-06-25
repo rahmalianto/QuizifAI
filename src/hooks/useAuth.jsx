@@ -98,6 +98,22 @@ export function AuthProvider({ children }) {
     if (error) throw error;
   };
 
+  const resetPassword = async (email) => {
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + '/update-password',
+    });
+    if (error) throw error;
+    return data;
+  };
+
+  const updatePassword = async (newPassword) => {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+    if (error) throw error;
+    return data;
+  };
+
   /**
    * Connect Microsoft account for OneNote access.
    * Uses signInWithOAuth which reliably returns provider_token
@@ -122,6 +138,8 @@ export function AuthProvider({ children }) {
     signIn,
     signUp,
     signOut,
+    resetPassword,
+    updatePassword,
     connectMicrosoft,
     providerToken,
   };
