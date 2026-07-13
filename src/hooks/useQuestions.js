@@ -453,6 +453,42 @@ export function useQuestions() {
   }, [user]);
 
   /**
+   * Fetch prioritized questions for practice using the Supabase RPC
+   */
+  const fetchPrioritizedPracticeQuestions = useCallback(async (categoryIds = [], tagNames = [], limit = 10) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setError(null);
+      const { data, error: fetchError } = await supabase.rpc('get_prioritized_practice_questions', {
+        p_user_id: user.id,
+        p_category_ids: categoryIds.length > 0 ? categoryIds : null,
+        p_tag_names: tagNames.length > 0 ? tagNames : null,
+        p_limit: limit
+      });
+
+      if (fetchError) throw fetchError;
+
+      // Normalize
+      return (data || []).map((q) => ({
+        ...q,
+        correct_answers: typeof q.correct_answers === 'string'
+          ? JSON.parse(q.correct_answers)
+          : q.correct_answers || [],
+        incorrect_options: typeof q.incorrect_options === 'string'
+          ? JSON.parse(q.incorrect_options)
+          : q.incorrect_options || [],
+        tags: q.tags || [],
+        category_name: q.category_name,
+      }));
+    } catch (err) {
+      setError(err.message);
+      console.error('Error fetching prioritized practice questions:', err);
+      throw err;
+    }
+  }, [user]);
+
+  /**
    * Save practice activity
    */
   const savePracticeActivity = async ({ sessionId, questionId, correctAnswer, myAnswer, correctnessScore }) => {
@@ -809,6 +845,7 @@ export function useQuestions() {
     fetchPracticeConfiguration,
     savePracticeConfiguration,
     fetchAllQuestions,
+    fetchPrioritizedPracticeQuestions,
     savePracticeActivity,
     fetchQuestionsByCategory,
     updateQuestion,

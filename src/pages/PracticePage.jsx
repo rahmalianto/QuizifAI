@@ -10,7 +10,7 @@ import { Dices, ArrowRight, CheckCircle, Eye, Settings, Trophy, RotateCcw } from
 
 export default function PracticePage() {
   const navigate = useNavigate();
-  const { fetchAllQuestions, savePracticeActivity, fetchPracticeConfiguration, savePracticeConfiguration } = useQuestions();
+  const { fetchAllQuestions, fetchPrioritizedPracticeQuestions, savePracticeActivity, fetchPracticeConfiguration, savePracticeConfiguration } = useQuestions();
   const { categories, fetchCategories } = useCategories();
   const { tags, fetchTags } = useTags();
   
@@ -109,27 +109,33 @@ export default function PracticePage() {
       setSetAsDefault(false); // reset checkbox after saving
     }
 
-    // Create a new session
-    setSessionId(crypto.randomUUID());
-    setSessionScore(0);
-    setCurrentQueueIndex(0);
+    setLoading(true);
+    try {
+      // Fetch prioritized questions from the backend
+      const queue = await fetchPrioritizedPracticeQuestions(selectedCategories, selectedTags, selectedCount);
 
-    // Shuffle the filtered pool
-    const shuffled = [...filteredQuestions];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      if (!queue || queue.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      // Create a new session
+      setSessionId(crypto.randomUUID());
+      setSessionScore(0);
+      setCurrentQueueIndex(0);
+      
+      setSessionQueue(queue);
+      
+      // Setup first question
+      setupQuestion(queue[0]);
+      
+      // Switch state
+      setPracticeState('PRACTICING');
+    } catch (err) {
+      console.error("Error starting practice session:", err);
+    } finally {
+      setLoading(false);
     }
-
-    // Slice to the requested count
-    const queue = shuffled.slice(0, selectedCount);
-    setSessionQueue(queue);
-    
-    // Setup first question
-    setupQuestion(queue[0]);
-    
-    // Switch state
-    setPracticeState('PRACTICING');
   };
 
   const setupQuestion = (q) => {
