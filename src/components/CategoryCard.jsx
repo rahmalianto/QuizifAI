@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FolderOpen, Edit3, Trash2, Check, X, HelpCircle, ArrowRight } from 'lucide-react';
+import { FolderOpen, Edit3, Trash2, Check, X, HelpCircle, ArrowRight, Dices } from 'lucide-react';
 
 export default function CategoryCard({ category, onUpdate, onDelete }) {
   const navigate = useNavigate();
@@ -122,13 +122,26 @@ export default function CategoryCard({ category, onUpdate, onDelete }) {
         )}
       </div>
 
-      {category.created_at && (
-        <div style={{ marginTop: 'var(--space-3)', paddingLeft: '60px' }}>
+      {/* Footer row */}
+      <div style={{ marginTop: 'var(--space-3)', paddingLeft: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        {category.created_at && (
           <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-400)' }}>
             Created {new Date(category.created_at).toLocaleDateString()}
           </span>
-        </div>
-      )}
+        )}
+        {!editing && (
+          <button
+            className="btn btn-outline btn-sm"
+            onClick={() => navigate('/practice', { state: { preSelectedCategories: [category.id] } })}
+            title="Practice this category"
+            id={`category-practice-btn-${category.id}`}
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', borderColor: 'var(--primary-300)', marginLeft: 'auto' }}
+          >
+            <Dices size={14} />
+            Practice
+          </button>
+        )}
+      </div>
     </div>
   );
 }

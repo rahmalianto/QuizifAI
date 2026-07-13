@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuestions } from '../hooks/useQuestions';
 import { useCategories } from '../hooks/useCategories';
 import { useTags } from '../hooks/useTags';
@@ -59,9 +59,19 @@ export default function PracticePage() {
     loadQuestions();
   }, [fetchAllQuestions]);
 
-  // Fetch default configuration
+  const location = useLocation();
+
+  // Fetch default configuration — but skip if we were given a preset via navigation state
   useEffect(() => {
     const loadConfig = async () => {
+      // If navigated here with a pre-selection, honour that instead of the saved config
+      if (location.state?.preSelectedCategories || location.state?.preSelectedTags) {
+        if (location.state.preSelectedCategories?.length > 0)
+          setSelectedCategories(location.state.preSelectedCategories);
+        if (location.state.preSelectedTags?.length > 0)
+          setSelectedTags(location.state.preSelectedTags);
+        return;
+      }
       const conf = await fetchPracticeConfiguration();
       if (conf) {
         if (conf.category && conf.category.length > 0) setSelectedCategories(conf.category);
@@ -70,7 +80,7 @@ export default function PracticePage() {
       }
     };
     loadConfig();
-  }, [fetchPracticeConfiguration]);
+  }, [fetchPracticeConfiguration, location.state]);
 
   // Dynamically filter questions
   useEffect(() => {

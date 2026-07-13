@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Tag, Plus, Link as LinkIcon, Edit2, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Tag, Plus, Link as LinkIcon, Edit2, Trash2, Dices } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import EmptyState from '../components/EmptyState';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -7,6 +8,7 @@ import { useTags } from '../hooks/useTags';
 import toast from 'react-hot-toast';
 
 export default function TagsPage() {
+  const navigate = useNavigate();
   const { tags, loading, fetchTags, createTag, updateTag, deleteTag } = useTags();
   
   const [showCreate, setShowCreate] = useState(false);
@@ -172,7 +174,7 @@ export default function TagsPage() {
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)' }}>Description</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Related URL</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '15%' }}>Created At</th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', textAlign: 'right' }}>Actions</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -206,6 +208,13 @@ export default function TagsPage() {
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => navigate('/practice', { state: { preSelectedTags: [tag.name] } })}
+                              title="Practice this tag"
+                            >
+                              <Dices size={14} style={{ color: 'var(--primary-500)' }} />
+                            </button>
                             <button
                               className="btn btn-ghost btn-icon btn-sm"
                               onClick={() => handleEdit(tag)}
