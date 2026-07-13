@@ -129,6 +129,14 @@ export default function QuestionsPage() {
     let aValue = a[sortConfig.key];
     let bValue = b[sortConfig.key];
 
+    // Special handling for numeric fields (e.g. current_score)
+    if (sortConfig.key === 'current_score') {
+      // Treat null (unpracticed) as -1
+      const aNum = aValue == null ? -1 : Number(aValue);
+      const bNum = bValue == null ? -1 : Number(bValue);
+      return sortConfig.direction === 'asc' ? aNum - bNum : bNum - aNum;
+    }
+
     // Handle nulls/undefined for correct sorting
     if (aValue == null) aValue = '';
     if (bValue == null) bValue = '';
@@ -396,8 +404,16 @@ export default function QuestionsPage() {
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', color: 'var(--success-700)', fontSize: 'var(--text-sm)' }}>
                           {(q.correct_answers || []).join(', ')}
                         </td>
-                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)' }}>
-                          {q.current_score != null ? `${q.current_score}%` : '—'}
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
+                          {q.last_practiced_at == null ? (
+                            <span className="badge badge-neutral" style={{ fontSize: '11px', padding: '2px 8px' }}>—</span>
+                          ) : q.current_score >= 80 ? (
+                            <span className="badge badge-success" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
+                          ) : q.current_score >= 50 ? (
+                            <span className="badge badge-warning" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
+                          ) : (
+                            <span className="badge badge-danger" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
+                          )}
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
                           {new Date(q.created_at).toLocaleDateString()}

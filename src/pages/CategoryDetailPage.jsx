@@ -220,6 +220,15 @@ export default function CategoryDetailPage() {
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
                           <span className={`badge badge-${badgeColor}`}>{typeLabel}</span>
+                          {q.last_practiced_at != null && (
+                            q.current_score >= 80 ? (
+                              <span className="badge badge-success" style={{ fontSize: '10px', padding: '2px 6px' }}>Score: {q.current_score}%</span>
+                            ) : q.current_score >= 50 ? (
+                              <span className="badge badge-warning" style={{ fontSize: '10px', padding: '2px 6px' }}>Score: {q.current_score}%</span>
+                            ) : (
+                              <span className="badge badge-danger" style={{ fontSize: '10px', padding: '2px 6px' }}>Score: {q.current_score}%</span>
+                            )
+                          )}
                           {(q.tags || []).slice(0, 3).map((tag) => (
                             <Link to="/tags" key={tag} style={{ textDecoration: 'none' }}>
                               <span className="badge badge-neutral badge-interactive" style={{ cursor: 'pointer' }}>#{tag}</span>
