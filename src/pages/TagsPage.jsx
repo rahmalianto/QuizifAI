@@ -172,8 +172,9 @@ export default function TagsPage() {
                     <tr>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Tag Name</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)' }}>Description</th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Related URL</th>
-                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '15%' }}>Created At</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '15%' }}>Knowledge</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '15%' }}>Related URL</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%' }}>Created At</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
@@ -193,6 +194,17 @@ export default function TagsPage() {
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', color: 'var(--neutral-600)', fontSize: 'var(--text-sm)' }}>
                           {tag.description || <span style={{ color: 'var(--neutral-400)', fontStyle: 'italic' }}>No description</span>}
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
+                          {tag.avg_score == null || tag.practiced_count === 0 ? (
+                            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-400)', fontStyle: 'italic' }}>Not practiced</span>
+                          ) : tag.avg_score >= 80 ? (
+                            <span className="badge badge-success" style={{ fontSize: '11px', padding: '2px 8px' }}>{tag.avg_score}%</span>
+                          ) : tag.avg_score >= 50 ? (
+                            <span className="badge badge-warning" style={{ fontSize: '11px', padding: '2px 8px' }}>{tag.avg_score}%</span>
+                          ) : (
+                            <span className="badge badge-danger" style={{ fontSize: '11px', padding: '2px 8px' }}>{tag.avg_score}%</span>
+                          )}
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)' }}>
                           {tag.link ? (

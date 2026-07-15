@@ -80,11 +80,27 @@ export default function CategoryCard({ category, onUpdate, onDelete }) {
                 onClick={() => navigate(`/categories/${category.id}`)}
               >
                 <h5 style={{ marginBottom: 'var(--space-1)' }}>{category.name}</h5>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
                   <HelpCircle size={14} style={{ color: 'var(--neutral-400)' }} />
                   <span style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
                     {category.question_count} {category.question_count === 1 ? 'question' : 'questions'}
                   </span>
+                  <span style={{ color: 'var(--neutral-300)', fontSize: 'var(--text-xs)' }}>·</span>
+                  {category.avg_score == null || category.practiced_count === 0 ? (
+                    <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-400)', fontStyle: 'italic' }}>Not practiced</span>
+                  ) : category.avg_score >= 80 ? (
+                    <span className="badge badge-success" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                      Knowledge: {category.avg_score}%
+                    </span>
+                  ) : category.avg_score >= 50 ? (
+                    <span className="badge badge-warning" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                      Knowledge: {category.avg_score}%
+                    </span>
+                  ) : (
+                    <span className="badge badge-danger" style={{ fontSize: '10px', padding: '1px 6px' }}>
+                      Knowledge: {category.avg_score}%
+                    </span>
+                  )}
                 </div>
               </div>
             </>

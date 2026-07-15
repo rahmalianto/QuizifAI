@@ -29,9 +29,22 @@ export function useCategories() {
 
       if (fetchError) throw fetchError;
 
+      // Fetch knowledge scores per category
+      const { data: scoreData } = await supabase.rpc('get_category_knowledge_scores', {
+        p_user_id: user.id,
+      });
+
+      // Build a lookup map: category_id -> { avg_score, practiced_count }
+      const scoreMap = {};
+      (scoreData || []).forEach((s) => {
+        scoreMap[s.category_id] = s;
+      });
+
       const categoriesWithCounts = (data || []).map((cat) => ({
         ...cat,
         question_count: cat.questions?.[0]?.count || 0,
+        avg_score: scoreMap[cat.id]?.avg_score ?? null,
+        practiced_count: scoreMap[cat.id]?.practiced_count ?? 0,
       }));
 
       setCategories(categoriesWithCounts);

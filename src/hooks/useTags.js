@@ -26,8 +26,26 @@ export function useTags() {
         .order('name', { ascending: true });
 
       if (fetchError) throw fetchError;
-      setTags(data || []);
-      return data || [];
+
+      // Fetch knowledge scores per tag
+      const { data: scoreData } = await supabase.rpc('get_tag_knowledge_scores', {
+        p_user_id: user.id,
+      });
+
+      // Build lookup map: tag_name -> { avg_score, practiced_count }
+      const scoreMap = {};
+      (scoreData || []).forEach((s) => {
+        scoreMap[s.tag_name] = s;
+      });
+
+      const tagsWithScores = (data || []).map((tag) => ({
+        ...tag,
+        avg_score: scoreMap[tag.name]?.avg_score ?? null,
+        practiced_count: scoreMap[tag.name]?.practiced_count ?? 0,
+      }));
+
+      setTags(tagsWithScores);
+      return tagsWithScores;
     } catch (err) {
       setError(err.message);
       console.error('Error fetching tags:', err);
