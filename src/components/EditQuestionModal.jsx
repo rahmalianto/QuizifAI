@@ -28,6 +28,7 @@ export default function EditQuestionModal({ question, saving, onSave, onClose })
   const [shortAnswerText, setShortAnswerText] = useState('');
   const [longAnswerText, setLongAnswerText] = useState('');
   const [tags, setTags] = useState([]);
+  const [explanation, setExplanation] = useState('');
 
   // Populate the form from the incoming question
   useEffect(() => {
@@ -36,6 +37,7 @@ export default function EditQuestionModal({ question, saving, onSave, onClose })
     setQuestionText(question.question_text || '');
     setAnswerType(question.answer_type || 'MULTIPLE_CHOICE');
     setTags(question.tags || []);
+    setExplanation(question.explanation || '');
 
     const correct = question.correct_answers || [];
     const incorrect = question.incorrect_options || [];
@@ -127,6 +129,7 @@ export default function EditQuestionModal({ question, saving, onSave, onClose })
       answerType,
       correctAnswers,
       incorrectOptions,
+      explanation: explanation.trim() || null,
       tags,
     });
   };
@@ -337,6 +340,21 @@ export default function EditQuestionModal({ question, saving, onSave, onClose })
             placeholder="Add tags..."
             disabled={saving}
           />
+
+          {/* Explanation */}
+          <div className="input-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              💡 Explanation <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-400)', fontWeight: 'normal' }}>(optional — shown after the answer is revealed)</span>
+            </label>
+            <textarea
+              value={explanation}
+              onChange={(e) => setExplanation(e.target.value)}
+              placeholder="Explain why the correct answer is right, and what makes the other options incorrect..."
+              disabled={saving}
+              rows={3}
+              style={{ resize: 'vertical', width: '100%', padding: 'var(--space-3)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', fontSize: 'var(--text-sm)', lineHeight: '1.5' }}
+            />
+          </div>
 
           {/* Action Buttons */}
           <div className="modal-actions">

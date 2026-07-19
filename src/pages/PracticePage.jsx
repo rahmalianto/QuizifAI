@@ -613,6 +613,23 @@ export default function PracticePage() {
                 </p>
               </div>
             )}
+
+            {showAnswer && currentQuestion?.explanation && (
+              <div className="animate-in fade-in" style={{
+                marginTop: 'var(--space-4)',
+                padding: 'var(--space-5)',
+                background: 'var(--warning-50)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--warning-200)'
+              }}>
+                <h4 style={{ color: 'var(--warning-700)', marginBottom: 'var(--space-2)', fontSize: 'var(--text-sm)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+                  <span>💡</span> Explanation
+                </h4>
+                <p style={{ fontSize: 'var(--text-md)', color: 'var(--neutral-800)', lineHeight: '1.6' }}>
+                  {currentQuestion.explanation}
+                </p>
+              </div>
+            )}
             
             <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-8)' }}>
               {!showAnswer ? (

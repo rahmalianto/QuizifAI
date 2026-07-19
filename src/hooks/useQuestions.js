@@ -209,6 +209,7 @@ export function useQuestions() {
           ? JSON.stringify(q.incorrect_options)
           : null,
         material_reference: q.material_reference || null,
+        explanation: q.explanation || null,
         current_score: 0,
       }));
 
@@ -290,6 +291,7 @@ export function useQuestions() {
     answerType,
     correctAnswers,
     incorrectOptions,
+    explanation,
     tags = [],
   }) => {
     if (!user) throw new Error('Not authenticated');
@@ -308,6 +310,7 @@ export function useQuestions() {
           ? JSON.stringify(incorrectOptions)
           : null,
         material_reference: 'Manual Entry',
+        explanation: explanation || null,
         current_score: 0,
       };
 
@@ -565,6 +568,7 @@ export function useQuestions() {
     answerType,
     correctAnswers,
     incorrectOptions,
+    explanation,
     tags,
   }) => {
     if (!user) throw new Error('Not authenticated');
@@ -580,8 +584,12 @@ export function useQuestions() {
         incorrect_options: incorrectOptions
           ? JSON.stringify(incorrectOptions)
           : null,
+        explanation: explanation !== undefined ? (explanation || null) : undefined,
         updated_at: new Date().toISOString(),
       };
+
+      // Remove undefined keys so we don't overwrite with undefined
+      Object.keys(updates).forEach(k => updates[k] === undefined && delete updates[k]);
 
       const { data, error: updateError } = await supabase
         .from('questions')

@@ -39,6 +39,7 @@ export default function ManualQuestionForm({ categories, createCategory }) {
   const [shortAnswerText, setShortAnswerText] = useState('');
   const [longAnswerText, setLongAnswerText] = useState('');
   const [tags, setTags] = useState([]);
+  const [explanation, setExplanation] = useState('');
 
   // Pre-select first category if available
   useEffect(() => {
@@ -171,6 +172,7 @@ export default function ManualQuestionForm({ categories, createCategory }) {
         answerType,
         correctAnswers,
         incorrectOptions,
+        explanation: explanation.trim() || null,
         tags,
       });
 
@@ -184,6 +186,7 @@ export default function ManualQuestionForm({ categories, createCategory }) {
       setShortAnswerText('');
       setLongAnswerText('');
       setTags([]);
+      setExplanation('');
     } catch (err) {
       toast.error(err.message || 'Failed to save question');
     }
@@ -472,6 +475,21 @@ export default function ManualQuestionForm({ categories, createCategory }) {
             placeholder="Add tags to organize this question..."
             disabled={saving}
           />
+
+          {/* Explanation */}
+          <div className="input-group">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              💡 Explanation <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-400)', fontWeight: 'normal' }}>(optional — shown after the answer is revealed in practice)</span>
+            </label>
+            <textarea
+              value={explanation}
+              onChange={(e) => setExplanation(e.target.value)}
+              placeholder="Explain why the correct answer is right, and what makes the other options incorrect..."
+              disabled={saving}
+              rows={3}
+              style={{ minHeight: '80px', resize: 'vertical' }}
+            />
+          </div>
         </div>
       </div>
 

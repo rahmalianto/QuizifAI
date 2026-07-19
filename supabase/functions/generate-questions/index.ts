@@ -75,6 +75,7 @@ Return a JSON object with a single "questions" array. Each question object must 
 - "correct_answers": string[] (array of correct answer strings)
 - "incorrect_options": string[] | null (array of wrong options, null for text answers)
 - "material_reference": string (source citation from the provided text)
+- "explanation": string (1-3 sentences explaining WHY the correct answer is right, and what makes the wrong options incorrect if applicable)
 ${tags && tags.length > 0 ? `- "tags": string[] (use these tags: ${tags.join(", ")})` : ""}
 
 Return ONLY the JSON object, no markdown formatting or code blocks.`;
@@ -160,6 +161,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
           ? q.incorrect_options
           : null,
       material_reference: q.material_reference || null,
+      explanation: q.explanation || null,
       tags: Array.isArray(q.tags) ? q.tags : tags || [],
     }));
 
