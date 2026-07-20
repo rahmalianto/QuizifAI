@@ -425,7 +425,7 @@ export function useQuestions() {
 
       const { data, error: fetchError } = await supabase
         .from('questions')
-        .select('*, question_tags(tags(name, deleted_at)), categories(name)')
+        .select('*, question_tags(tags(name, deleted_at)), categories(name), practice_activity(count)')
         .eq('user_id', user.id)
         .is('deleted_at', null);
 
@@ -447,6 +447,7 @@ export function useQuestions() {
           .map((qt) => qt.tags?.name)
           .filter(Boolean),
         category_name: q.categories?.name,
+        attempt_count: q.practice_activity?.[0]?.count ?? 0,
       }));
     } catch (err) {
       setError(err.message);

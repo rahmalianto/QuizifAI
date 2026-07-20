@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { HelpCircle, Edit3, Trash2, Plus, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { HelpCircle, Edit3, Trash2, Plus, Search, ChevronUp, ChevronDown, Columns } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -11,6 +11,27 @@ import BulkDeleteModal from '../components/BulkDeleteModal';
 import { useQuestions } from '../hooks/useQuestions';
 import { ANSWER_TYPE_COLORS, QUESTION_TYPES } from '../lib/constants';
 import toast from 'react-hot-toast';
+
+// Optional columns config — Question & Actions are always shown (mandatory)
+const OPTIONAL_COLUMNS = [
+  { key: 'correct_answer', label: 'Correct Answer', defaultOn: true },
+  { key: 'score',          label: 'Score',          defaultOn: true },
+  { key: 'attempts',       label: 'Attempts',       defaultOn: false },
+  { key: 'last_attempt',   label: 'Last Attempt',   defaultOn: false },
+  { key: 'created_at',     label: 'Created At',     defaultOn: false },
+  { key: 'updated_at',     label: 'Updated At',     defaultOn: false },
+];
+
+const LS_KEY = 'quizifai_questions_columns';
+
+function loadVisibleColumns() {
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    if (saved) return JSON.parse(saved);
+  } catch (_) {}
+  // default
+  return Object.fromEntries(OPTIONAL_COLUMNS.map(c => [c.key, c.defaultOn]));
+}
 
 export default function QuestionsPage() {
   const {
@@ -31,6 +52,11 @@ export default function QuestionsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'created_at', direction: 'desc' });
 
+  // Column visibility
+  const [visibleColumns, setVisibleColumns] = useState(loadVisibleColumns);
+  const [colPickerOpen, setColPickerOpen] = useState(false);
+  const colPickerRef = useRef(null);
+
   // Bulk Actions State
   const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
   const [bulkModal, setBulkModal] = useState(null); // 'category', 'tags', 'delete'
@@ -50,6 +76,29 @@ export default function QuestionsPage() {
   useEffect(() => {
     loadQuestions();
   }, [loadQuestions]);
+
+  // Close column picker on outside click
+  useEffect(() => {
+    if (!colPickerOpen) return;
+    const handler = (e) => {
+      if (colPickerRef.current && !colPickerRef.current.contains(e.target)) {
+        setColPickerOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [colPickerOpen]);
+
+  const toggleColumn = (key) => {
+    setVisibleColumns(prev => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem(LS_KEY, JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // Helper: is this optional column visible?
+  const col = (key) => visibleColumns[key] ?? false;
 
   const handleEdit = (question) => {
     setEditingQuestion(question);
@@ -129,8 +178,8 @@ export default function QuestionsPage() {
     let aValue = a[sortConfig.key];
     let bValue = b[sortConfig.key];
 
-    // Special handling for numeric fields (e.g. current_score)
-    if (sortConfig.key === 'current_score') {
+    // Special handling for numeric fields (e.g. current_score, attempt_count)
+    if (sortConfig.key === 'current_score' || sortConfig.key === 'attempt_count') {
       // Treat null (unpracticed) as -1
       const aNum = aValue == null ? -1 : Number(aValue);
       const bNum = bValue == null ? -1 : Number(bValue);
@@ -287,8 +336,55 @@ export default function QuestionsPage() {
                 </div>
               )}
             </div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
-              Showing {sortedQuestions.length} of {questions.length} questions
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              {/* Column picker */}
+              <div ref={colPickerRef} style={{ position: 'relative' }}>
+                <button
+                  className="btn btn-secondary btn-sm"
+                  onClick={() => setColPickerOpen(o => !o)}
+                  id="btn-column-picker"
+                  style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                >
+                  <Columns size={14} />
+                  Columns
+                </button>
+                {colPickerOpen && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    background: 'var(--neutral-0)',
+                    border: 'var(--border-light)',
+                    borderRadius: 'var(--radius-lg)',
+                    boxShadow: 'var(--shadow-lg)',
+                    padding: 'var(--space-4)',
+                    zIndex: 100,
+                    minWidth: '200px',
+                  }}>
+                    <p style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-400)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 'var(--space-3)' }}>
+                      Toggle Columns
+                    </p>
+                    {/* Optional columns */}
+                    {OPTIONAL_COLUMNS.map(c => (
+                      <label
+                        key={c.key}
+                        style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', padding: 'var(--space-2) 0', cursor: 'pointer' }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={visibleColumns[c.key] ?? c.defaultOn}
+                          onChange={() => toggleColumn(c.key)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <span style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-700)' }}>{c.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
+                Showing {sortedQuestions.length} of {questions.length} questions
+              </div>
             </div>
           </div>
 
@@ -333,30 +429,60 @@ export default function QuestionsPage() {
                       >
                         <div style={{ display: 'flex', alignItems: 'center' }}>Question <SortIcon columnKey="question_text" /></div>
                       </th>
-                      <th 
-                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%', cursor: 'pointer', userSelect: 'none' }}
-                        onClick={() => handleSort('correct_answers')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center' }}>Correct Answer <SortIcon columnKey="correct_answers" /></div>
-                      </th>
-                      <th 
-                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', cursor: 'pointer', userSelect: 'none' }}
-                        onClick={() => handleSort('current_score')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center' }}>Score <SortIcon columnKey="current_score" /></div>
-                      </th>
-                      <th 
-                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%', cursor: 'pointer', userSelect: 'none' }}
-                        onClick={() => handleSort('created_at')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center' }}>Created At <SortIcon columnKey="created_at" /></div>
-                      </th>
-                      <th 
-                        style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%', cursor: 'pointer', userSelect: 'none' }}
-                        onClick={() => handleSort('updated_at')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center' }}>Updated At <SortIcon columnKey="updated_at" /></div>
-                      </th>
+                      {/* Correct Answer column header */}
+                      {col('correct_answer') && (
+                        <th
+                          style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => handleSort('correct_answers')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>Correct Answer <SortIcon columnKey="correct_answers" /></div>
+                        </th>
+                      )}
+                      {/* Score column header */}
+                      {col('score') && (
+                        <th
+                          style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => handleSort('current_score')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>Score <SortIcon columnKey="current_score" /></div>
+                        </th>
+                      )}
+                      {/* Attempts column header */}
+                      {col('attempts') && (
+                        <th
+                          style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '8%', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => handleSort('attempt_count')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>Attempts <SortIcon columnKey="attempt_count" /></div>
+                        </th>
+                      )}
+                      {/* Last Attempt column header */}
+                      {col('last_attempt') && (
+                        <th
+                          style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => handleSort('last_practiced_at')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>Last Attempt <SortIcon columnKey="last_practiced_at" /></div>
+                        </th>
+                      )}
+                      {/* Created At column header */}
+                      {col('created_at') && (
+                        <th
+                          style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => handleSort('created_at')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>Created At <SortIcon columnKey="created_at" /></div>
+                        </th>
+                      )}
+                      {/* Updated At column header */}
+                      {col('updated_at') && (
+                        <th
+                          style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', cursor: 'pointer', userSelect: 'none' }}
+                          onClick={() => handleSort('updated_at')}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center' }}>Updated At <SortIcon columnKey="updated_at" /></div>
+                        </th>
+                      )}
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%', textAlign: 'right' }}>Actions</th>
                     </tr>
                   </thead>
@@ -401,26 +527,59 @@ export default function QuestionsPage() {
                             )}
                           </div>
                         </td>
-                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', color: 'var(--success-700)', fontSize: 'var(--text-sm)' }}>
-                          {(q.correct_answers || []).join(', ')}
-                        </td>
-                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
-                          {q.last_practiced_at == null ? (
-                            <span className="badge badge-neutral" style={{ fontSize: '11px', padding: '2px 8px' }}>—</span>
-                          ) : q.current_score >= 80 ? (
-                            <span className="badge badge-success" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
-                          ) : q.current_score >= 50 ? (
-                            <span className="badge badge-warning" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
-                          ) : (
-                            <span className="badge badge-danger" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
-                          )}
-                        </td>
-                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
-                          {new Date(q.created_at).toLocaleDateString()}
-                        </td>
-                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)' }}>
-                          {new Date(q.updated_at).toLocaleDateString()}
-                        </td>
+                        {/* Correct Answer cell */}
+                        {col('correct_answer') && (
+                          <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', color: 'var(--success-700)', fontSize: 'var(--text-sm)' }}>
+                            {(q.correct_answers || []).join(', ')}
+                          </td>
+                        )}
+                        {/* Score cell */}
+                        {col('score') && (
+                          <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
+                            {q.last_practiced_at == null ? (
+                              <span className="badge badge-neutral" style={{ fontSize: '11px', padding: '2px 8px' }}>—</span>
+                            ) : q.current_score >= 80 ? (
+                              <span className="badge badge-success" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
+                            ) : q.current_score >= 50 ? (
+                              <span className="badge badge-warning" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
+                            ) : (
+                              <span className="badge badge-danger" style={{ fontSize: '11px', padding: '2px 8px' }}>{q.current_score}%</span>
+                            )}
+                          </td>
+                        )}
+                        {/* Attempts cell */}
+                        {col('attempts') && (
+                          <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', whiteSpace: 'nowrap' }}>
+                            {q.attempt_count > 0 ? (
+                              <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--info-600)' }}>
+                                {q.attempt_count}×
+                              </span>
+                            ) : (
+                              <span style={{ color: 'var(--neutral-300)' }}>—</span>
+                            )}
+                          </td>
+                        )}
+                        {/* Last Attempt cell */}
+                        {col('last_attempt') && (
+                          <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', whiteSpace: 'nowrap' }}>
+                            {q.last_practiced_at
+                              ? new Date(q.last_practiced_at).toLocaleDateString()
+                              : <span style={{ color: 'var(--neutral-300)' }}>—</span>
+                            }
+                          </td>
+                        )}
+                        {/* Created At cell */}
+                        {col('created_at') && (
+                          <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', whiteSpace: 'nowrap' }}>
+                            {new Date(q.created_at).toLocaleDateString()}
+                          </td>
+                        )}
+                        {/* Updated At cell */}
+                        {col('updated_at') && (
+                          <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', whiteSpace: 'nowrap' }}>
+                            {new Date(q.updated_at).toLocaleDateString()}
+                          </td>
+                        )}
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end' }}>
                             <button
