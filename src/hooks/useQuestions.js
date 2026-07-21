@@ -570,6 +570,7 @@ export function useQuestions() {
     correctAnswers,
     incorrectOptions,
     explanation,
+    option_explanations,
     tags,
   }) => {
     if (!user) throw new Error('Not authenticated');
@@ -586,6 +587,7 @@ export function useQuestions() {
           ? JSON.stringify(incorrectOptions)
           : null,
         explanation: explanation !== undefined ? (explanation || null) : undefined,
+        option_explanations: option_explanations !== undefined ? (option_explanations || null) : undefined,
         updated_at: new Date().toISOString(),
       };
 
@@ -814,6 +816,66 @@ export function useQuestions() {
   };
 
   /**
+   * Generate an AI explanation for a question
+   * Returns { explanation, option_explanations }
+   */
+  const generateExplanation = async ({ questionText, answerType, correctAnswers, incorrectOptions }) => {
+    if (!user) throw new Error('Not authenticated');
+
+    const { data, error: fnError } = await supabase.functions.invoke(
+      'generate-explanation',
+      {
+        body: {
+          questionText,
+          answerType,
+          correctAnswers,
+          incorrectOptions: incorrectOptions || [],
+        },
+      }
+    );
+
+    if (fnError) {
+      let errorMessage = fnError.message;
+      if (fnError.context && typeof fnError.context.text === 'function') {
+        const text = await fnError.context.text();
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed.error) errorMessage = parsed.error;
+        } catch (e) {
+          errorMessage = text;
+        }
+      }
+      throw new Error(errorMessage);
+    }
+
+    if (!data?.explanation) {
+      throw new Error('Invalid response from explanation generator');
+    }
+
+    return data; // { explanation, option_explanations }
+  };
+
+  /**
+   * Save a generated explanation back to the database
+   */
+  const saveExplanation = async (questionId, explanationText, optionExplanations = null) => {
+    if (!user) throw new Error('Not authenticated');
+
+    const { error: updateError } = await supabase
+      .from('questions')
+      .update({
+        explanation: explanationText,
+        option_explanations: optionExplanations || null,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', questionId)
+      .eq('user_id', user.id);
+
+    if (updateError) throw updateError;
+    return true;
+  };
+
+  /**
    * Bulk delete questions
    */
   const bulkDeleteQuestions = async (questionIds) => {
@@ -864,6 +926,8 @@ export function useQuestions() {
     bulkRemoveTags,
     bulkDeleteQuestions,
     clearGenerated,
+    generateExplanation,
+    saveExplanation,
   };
 }
 

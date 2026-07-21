@@ -43,6 +43,7 @@ export default function QuestionsPage() {
     bulkAddTags,
     bulkRemoveTags,
     bulkDeleteQuestions,
+    generateExplanation,
   } = useQuestions();
 
   const [questions, setQuestions] = useState([]);
@@ -616,6 +617,17 @@ export default function QuestionsPage() {
           saving={saving}
           onSave={handleSaveEdit}
           onClose={() => setEditingQuestion(null)}
+          onDelete={async (questionId) => {
+            try {
+              await deleteQuestion(questionId);
+              setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+              toast.success('Question deleted');
+            } catch (err) {
+              toast.error(err.message || 'Failed to delete question');
+              throw err;
+            }
+          }}
+          generateExplanation={generateExplanation}
         />
       )}
 

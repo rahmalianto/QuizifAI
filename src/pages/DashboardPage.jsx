@@ -28,7 +28,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingQuestion, setEditingQuestion] = useState(null);
-  const { updateQuestion, saving } = useQuestions();
+  const { updateQuestion, deleteQuestion, saving, generateExplanation } = useQuestions();
 
   // Analytics state
   const [dailyChart, setDailyChart] = useState([]);
@@ -500,6 +500,16 @@ export default function DashboardPage() {
           saving={saving}
           onSave={handleSaveEdit}
           onClose={() => setEditingQuestion(null)}
+          onDelete={async (questionId) => {
+            try {
+              await deleteQuestion(questionId);
+              setRecentActivity((prev) => prev.filter((q) => q.id !== questionId));
+            } catch (err) {
+              console.error(err);
+              throw err;
+            }
+          }}
+          generateExplanation={generateExplanation}
         />
       )}
     </>

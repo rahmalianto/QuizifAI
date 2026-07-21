@@ -27,6 +27,7 @@ export default function CategoryDetailPage() {
     fetchQuestionsByCategory,
     updateQuestion,
     deleteQuestion,
+    generateExplanation,
   } = useQuestions();
 
   const { categories } = useCategories();
@@ -300,6 +301,17 @@ export default function CategoryDetailPage() {
           saving={saving}
           onSave={handleSaveEdit}
           onClose={() => setEditingQuestion(null)}
+          onDelete={async (questionId) => {
+            try {
+              await deleteQuestion(questionId);
+              setQuestions((prev) => prev.filter((q) => q.id !== questionId));
+              toast.success('Question deleted');
+            } catch (err) {
+              toast.error(err.message || 'Failed to delete question');
+              throw err;
+            }
+          }}
+          generateExplanation={generateExplanation}
         />
       )}
     </>

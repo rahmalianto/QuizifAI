@@ -41,6 +41,7 @@
   /* Accent — Coral */
   --danger-50: #FFF1F0;
   --danger-100: #FFE0DE;
+  --danger-200: #FECACA;
   --danger-500: #F43F5E;
   --danger-600: #E11D48;
   --danger-700: #BE123C;
@@ -48,8 +49,10 @@
   /* Accent — Amber */
   --warning-50: #FFFBEB;
   --warning-100: #FEF3C7;
+  --warning-200: #FDE68A;
   --warning-500: #F59E0B;
   --warning-600: #D97706;
+  --warning-700: #B45309;
 
   /* Accent — Sky */
   --info-50: #F0F9FF;
@@ -123,6 +126,11 @@
   /* Layout */
   --max-width: 1200px;
   --navbar-height: 64px;
+}
+
+/* --- Keyframe Animations --- */
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 /* --- Reset & Base --- */
