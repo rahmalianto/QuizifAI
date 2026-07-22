@@ -45,6 +45,7 @@ export default function PracticePage() {
   const [savingExplanation, setSavingExplanation] = useState(false);
   const [explanationSaved, setExplanationSaved] = useState(false);
   const [explanationError, setExplanationError] = useState(null);
+  const [explanationOpen, setExplanationOpen] = useState(false);
 
   // Fetch initial data
   useEffect(() => {
@@ -178,6 +179,7 @@ export default function PracticePage() {
     setSavingExplanation(false);
     setExplanationSaved(false);
     setExplanationError(null);
+    setExplanationOpen(false);
   };
 
   const handleOptionClick = (opt) => {
@@ -219,6 +221,9 @@ export default function PracticePage() {
     }
 
     setSessionScore(prev => prev + score);
+
+    // Auto-open explanation if the answer was wrong (score < 1), collapse if correct
+    setExplanationOpen(score < 1);
 
     if (savePracticeActivity) {
       await savePracticeActivity({
@@ -627,211 +632,191 @@ export default function PracticePage() {
               </div>
             )}
 
-            {/* ── EXPLANATION PANEL ── */}
+            {/* ── COLLAPSIBLE EXPLANATION PANEL ── */}
             {showAnswer && (() => {
               const existingExplanation = currentQuestion?.explanation;
               const hasExistingExplanation = !!existingExplanation;
               const hasGeneratedExplanation = !!generatedExplanation;
+              const hasAnyExplanation = hasExistingExplanation || hasGeneratedExplanation;
 
-              // Case A: explanation already in DB — show it
-              if (hasExistingExplanation && !hasGeneratedExplanation) {
-                const dbOptionExplanations = currentQuestion?.option_explanations;
-                return (
-                  <div className="animate-in fade-in" style={{
-                    marginTop: 'var(--space-4)',
-                    padding: 'var(--space-5)',
-                    background: 'var(--warning-50)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--warning-200)'
-                  }}>
-                    <h4 style={{ color: 'var(--warning-700)', marginBottom: 'var(--space-2)', fontSize: 'var(--text-sm)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <span>💡</span> Explanation
-                    </h4>
-                    <p style={{ fontSize: 'var(--text-md)', color: 'var(--neutral-800)', lineHeight: '1.6', marginBottom: dbOptionExplanations ? 'var(--space-4)' : '0' }}>
-                      {existingExplanation}
-                    </p>
-
-                    {/* Per-option breakdown from DB */}
-                    {dbOptionExplanations && Object.keys(dbOptionExplanations).length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
-                        {Object.entries(dbOptionExplanations).map(([option, desc]) => {
-                          const isCorrect = (currentQuestion?.correct_answers || []).includes(option);
-                          return (
-                            <div key={option} style={{
-                              padding: 'var(--space-3)',
-                              borderRadius: 'var(--radius-sm)',
-                              background: isCorrect ? 'var(--success-50)' : 'var(--neutral-100)',
-                              border: `1px solid ${isCorrect ? 'var(--success-200)' : 'var(--neutral-200)'}`,
-                              display: 'flex',
-                              gap: 'var(--space-3)',
-                              alignItems: 'flex-start'
-                            }}>
-                              <span style={{ fontSize: '14px', marginTop: '2px', flexShrink: 0 }}>{isCorrect ? '✅' : '❌'}</span>
-                              <div>
-                                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: isCorrect ? 'var(--success-700)' : 'var(--neutral-700)', marginBottom: 'var(--space-1)' }}>{option}</div>
-                                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-600)', lineHeight: '1.5' }}>{desc}</div>
+              // The content to show inside the panel
+              const renderExplanationContent = () => {
+                if (hasGeneratedExplanation) {
+                  const { explanation, option_explanations } = generatedExplanation;
+                  return (
+                    <>
+                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-800)', lineHeight: '1.6', marginBottom: option_explanations ? 'var(--space-4)' : '0' }}>
+                        {explanation}
+                      </p>
+                      {option_explanations && Object.keys(option_explanations).length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
+                          {Object.entries(option_explanations).map(([option, desc]) => {
+                            const isCorrect = (currentQuestion?.correct_answers || []).includes(option);
+                            return (
+                              <div key={option} style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', background: isCorrect ? 'var(--success-50)' : 'var(--neutral-100)', border: `1px solid ${isCorrect ? 'var(--success-200)' : 'var(--neutral-200)'}`, display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+                                <span style={{ fontSize: '14px', marginTop: '2px', flexShrink: 0 }}>{isCorrect ? '✅' : '❌'}</span>
+                                <div>
+                                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: isCorrect ? 'var(--success-700)' : 'var(--neutral-700)', marginBottom: 'var(--space-1)' }}>{option}</div>
+                                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-600)', lineHeight: '1.5' }}>{desc}</div>
+                                </div>
                               </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-
-              // Case B: AI explanation was just generated — show full breakdown
-              if (hasGeneratedExplanation) {
-                const { explanation, option_explanations } = generatedExplanation;
-                return (
-                  <div className="animate-in fade-in" style={{
-                    marginTop: 'var(--space-4)',
-                    padding: 'var(--space-5)',
-                    background: 'var(--warning-50)',
-                    borderRadius: 'var(--radius-md)',
-                    border: '1px solid var(--warning-200)'
-                  }}>
-                    <h4 style={{ color: 'var(--warning-700)', marginBottom: 'var(--space-3)', fontSize: 'var(--text-sm)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                      <Sparkles size={14} /> AI Explanation
-                    </h4>
-                    <p style={{ fontSize: 'var(--text-md)', color: 'var(--neutral-800)', lineHeight: '1.6', marginBottom: option_explanations ? 'var(--space-4)' : '0' }}>
-                      {explanation}
-                    </p>
-
-                    {/* Per-option breakdown */}
-                    {option_explanations && Object.keys(option_explanations).length > 0 && (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginBottom: 'var(--space-4)' }}>
-                        {Object.entries(option_explanations).map(([option, desc]) => {
-                          const isCorrect = (currentQuestion?.correct_answers || []).includes(option);
-                          return (
-                            <div key={option} style={{
-                              padding: 'var(--space-3)',
-                              borderRadius: 'var(--radius-sm)',
-                              background: isCorrect ? 'var(--success-50)' : 'var(--neutral-100)',
-                              border: `1px solid ${isCorrect ? 'var(--success-200)' : 'var(--neutral-200)'}`,
-                              display: 'flex',
-                              gap: 'var(--space-3)',
-                              alignItems: 'flex-start'
-                            }}>
-                              <span style={{ fontSize: '14px', marginTop: '2px', flexShrink: 0 }}>{isCorrect ? '✅' : '❌'}</span>
-                              <div>
-                                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: isCorrect ? 'var(--success-700)' : 'var(--neutral-700)', marginBottom: 'var(--space-1)' }}>{option}</div>
-                                <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-600)', lineHeight: '1.5' }}>{desc}</div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Save button */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      {explanationSaved ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--success-600)', fontWeight: 'var(--weight-medium)' }}>
-                          <Check size={16} /> Explanation saved!
-                        </span>
-                      ) : (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          disabled={savingExplanation}
-                          onClick={async () => {
-                            setSavingExplanation(true);
-                            try {
-                              await saveExplanation(currentQuestion.id, explanation, option_explanations);
-                              // Patch local session queue so it shows from DB next time
-                              setSessionQueue(prev => prev.map((q, idx) =>
-                                idx === currentQueueIndex ? { ...q, explanation, option_explanations } : q
-                              ));
-                              setExplanationSaved(true);
-                            } catch (e) {
-                              setExplanationError('Failed to save. Please try again.');
-                            } finally {
-                              setSavingExplanation(false);
-                            }
-                          }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-                          id="btn-save-explanation"
-                        >
-                          {savingExplanation ? (
-                            <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Saving...</>
-                          ) : (
-                            <><Save size={14} /> Save Explanation</>
-                          )}
-                        </button>
+                            );
+                          })}
+                        </div>
                       )}
-                    </div>
-                    {explanationError && (
-                      <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--danger-600)' }}>{explanationError}</p>
-                    )}
-                  </div>
-                );
-              }
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        {explanationSaved ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--success-600)', fontWeight: 'var(--weight-medium)' }}>
+                            <Check size={16} /> Explanation saved!
+                          </span>
+                        ) : (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            disabled={savingExplanation}
+                            onClick={async () => {
+                              setSavingExplanation(true);
+                              try {
+                                await saveExplanation(currentQuestion.id, explanation, option_explanations);
+                                setSessionQueue(prev => prev.map((q, idx) =>
+                                  idx === currentQueueIndex ? { ...q, explanation, option_explanations } : q
+                                ));
+                                setExplanationSaved(true);
+                              } catch (e) {
+                                setExplanationError('Failed to save. Please try again.');
+                              } finally {
+                                setSavingExplanation(false);
+                              }
+                            }}
+                            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                            id="btn-save-explanation"
+                          >
+                            {savingExplanation ? (
+                              <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Saving...</>
+                            ) : (
+                              <><Save size={14} /> Save Explanation</>
+                            )}
+                          </button>
+                        )}
+                      </div>
+                      {explanationError && (
+                        <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--danger-600)' }}>{explanationError}</p>
+                      )}
+                    </>
+                  );
+                }
 
-              // Case C: no explanation at all — show generate button
+                if (hasExistingExplanation) {
+                  const dbOptionExplanations = currentQuestion?.option_explanations;
+                  return (
+                    <>
+                      <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-800)', lineHeight: '1.6', marginBottom: dbOptionExplanations ? 'var(--space-4)' : '0' }}>
+                        {existingExplanation}
+                      </p>
+                      {dbOptionExplanations && Object.keys(dbOptionExplanations).length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+                          {Object.entries(dbOptionExplanations).map(([option, desc]) => {
+                            const isCorrect = (currentQuestion?.correct_answers || []).includes(option);
+                            return (
+                              <div key={option} style={{ padding: 'var(--space-3)', borderRadius: 'var(--radius-sm)', background: isCorrect ? 'var(--success-50)' : 'var(--neutral-100)', border: `1px solid ${isCorrect ? 'var(--success-200)' : 'var(--neutral-200)'}`, display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start' }}>
+                                <span style={{ fontSize: '14px', marginTop: '2px', flexShrink: 0 }}>{isCorrect ? '✅' : '❌'}</span>
+                                <div>
+                                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: isCorrect ? 'var(--success-700)' : 'var(--neutral-700)', marginBottom: 'var(--space-1)' }}>{option}</div>
+                                  <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-600)', lineHeight: '1.5' }}>{desc}</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </>
+                  );
+                }
+
+                return null;
+              };
+
               return (
                 <div style={{ marginTop: 'var(--space-4)' }}>
-                  {generatingExplanation ? (
-                    <div style={{
-                      padding: 'var(--space-5)',
-                      background: 'var(--neutral-50)',
-                      borderRadius: 'var(--radius-md)',
-                      border: '1px solid var(--border-light)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-3)',
-                      color: 'var(--neutral-600)',
-                      fontSize: 'var(--text-sm)'
-                    }}>
-                      <span style={{ width: '16px', height: '16px', border: '2px solid var(--primary-400)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
-                      Generating explanation with AI...
+                  {hasAnyExplanation ? (
+                    /* Collapsible accordion for existing/generated explanation */
+                    <div style={{ borderRadius: 'var(--radius-md)', border: `1px solid ${explanationOpen ? 'var(--warning-200)' : 'var(--border-light)'}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
+                      {/* Toggle header */}
+                      <button
+                        type="button"
+                        onClick={() => setExplanationOpen(o => !o)}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: 'var(--space-3) var(--space-4)',
+                          background: explanationOpen ? 'var(--warning-50)' : 'var(--neutral-50)',
+                          border: 'none',
+                          cursor: 'pointer',
+                          transition: 'background 0.2s ease',
+                          gap: 'var(--space-2)',
+                        }}
+                        id="btn-toggle-explanation"
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: explanationOpen ? 'var(--warning-700)' : 'var(--neutral-600)' }}>
+                          <span>💡</span>
+                          {hasGeneratedExplanation ? 'AI Explanation' : 'Explanation'}
+                        </span>
+                        <span style={{ fontSize: '12px', color: 'var(--neutral-400)', transform: explanationOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}>▼</span>
+                      </button>
+                      {/* Collapsible body */}
+                      {explanationOpen && (
+                        <div className="animate-in fade-in" style={{ padding: 'var(--space-4)', background: 'var(--warning-50)', borderTop: '1px solid var(--warning-200)' }}>
+                          {renderExplanationContent()}
+                        </div>
+                      )}
                     </div>
                   ) : (
-                    <button
-                      className="btn btn-ghost btn-sm"
-                      id="btn-generate-explanation"
-                      onClick={async () => {
-                        setGeneratingExplanation(true);
-                        setExplanationError(null);
-                        try {
-                          const result = await generateExplanation({
-                            questionText: currentQuestion.question_text,
-                            answerType: currentQuestion.answer_type,
-                            correctAnswers: currentQuestion.correct_answers,
-                            incorrectOptions: currentQuestion.incorrect_options,
-                          });
-                          setGeneratedExplanation(result);
-                        } catch (e) {
-                          setExplanationError('Failed to generate explanation. Please try again.');
-                        } finally {
-                          setGeneratingExplanation(false);
-                        }
-                      }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 'var(--space-2)',
-                        color: 'var(--primary-600)',
-                        border: '1px dashed var(--primary-300)',
-                        borderRadius: 'var(--radius-md)',
-                        padding: 'var(--space-3) var(--space-4)',
-                        width: '100%',
-                        justifyContent: 'center',
-                        fontSize: 'var(--text-sm)',
-                        fontWeight: 'var(--weight-medium)',
-                        transition: 'all 0.2s ease'
-                      }}
-                    >
-                      <Sparkles size={16} /> Generate Explanation
-                    </button>
-                  )}
-                  {explanationError && (
-                    <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--danger-600)' }}>{explanationError}</p>
+                    /* No explanation — show generate button or loading */
+                    generatingExplanation ? (
+                      <div style={{ padding: 'var(--space-4)', background: 'var(--neutral-50)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: 'var(--space-3)', color: 'var(--neutral-600)', fontSize: 'var(--text-sm)' }}>
+                        <span style={{ width: '16px', height: '16px', border: '2px solid var(--primary-400)', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite', flexShrink: 0 }} />
+                        Generating explanation with AI...
+                      </div>
+                    ) : (
+                      <>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          id="btn-generate-explanation"
+                          onClick={async () => {
+                            setGeneratingExplanation(true);
+                            setExplanationError(null);
+                            try {
+                              const result = await generateExplanation({
+                                questionText: currentQuestion.question_text,
+                                answerType: currentQuestion.answer_type,
+                                correctAnswers: currentQuestion.correct_answers,
+                                incorrectOptions: currentQuestion.incorrect_options,
+                              });
+                              setGeneratedExplanation(result);
+                              setExplanationOpen(true);
+                            } catch (e) {
+                              setExplanationError('Failed to generate explanation. Please try again.');
+                            } finally {
+                              setGeneratingExplanation(false);
+                            }
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', border: '1px dashed var(--primary-300)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', width: '100%', justifyContent: 'center', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', transition: 'all 0.2s ease' }}
+                        >
+                          <Sparkles size={16} /> Generate Explanation
+                        </button>
+                        {explanationError && (
+                          <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--danger-600)' }}>{explanationError}</p>
+                        )}
+                      </>
+                    )
                   )}
                 </div>
               );
             })()}
-            
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-8)' }}>
+
+            {/* ── NEXT / SUBMIT BUTTON ── */}
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-6)' }}>
               {!showAnswer ? (
                 <button 
                   className="btn btn-primary btn-lg" 
