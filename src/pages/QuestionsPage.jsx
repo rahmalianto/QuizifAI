@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { HelpCircle, Edit3, Trash2, Plus, Search, ChevronUp, ChevronDown, Columns } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { HelpCircle, Edit3, Trash2, Plus, Search, ChevronUp, ChevronDown, Columns, Dices } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
@@ -34,6 +34,7 @@ function loadVisibleColumns() {
 }
 
 export default function QuestionsPage() {
+  const navigate = useNavigate();
   const {
     saving,
     fetchAllQuestions,
@@ -583,6 +584,14 @@ export default function QuestionsPage() {
                         )}
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', textAlign: 'right' }}>
                           <div style={{ display: 'flex', gap: 'var(--space-1)', justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-ghost btn-icon btn-sm"
+                              onClick={() => navigate('/practice', { state: { directQuestionId: q.id } })}
+                              title="Practice this question"
+                              style={{ color: 'var(--primary-600)' }}
+                            >
+                              <Dices size={14} />
+                            </button>
                             <button
                               className="btn btn-ghost btn-icon btn-sm"
                               onClick={() => handleEdit(q)}

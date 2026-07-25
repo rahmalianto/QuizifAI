@@ -1,56 +1,31 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { ImagePlus, Upload, Clipboard, X } from 'lucide-react';
+import { compressImage, getSignedImageUrl } from '../services/imageService';
 
-const MAX_IMAGE_SIZE = 4 * 1024 * 1024; // 4MB base64 limit
+const MAX_IMAGE_SIZE = 250 * 1024; // 250KB limit
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
 
-/**
- * Resize an image if its base64 exceeds the max size.
- * Returns { base64, mimeType }.
- */
-function resizeImage(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => {
-        // Check if raw base64 is already small enough
-        const rawBase64 = reader.result.split(',')[1];
-        if (rawBase64.length <= MAX_IMAGE_SIZE) {
-          resolve({ base64: rawBase64, mimeType: file.type });
-          return;
-        }
-
-        // Need to resize — scale down proportionally
-        const canvas = document.createElement('canvas');
-        let { width, height } = img;
-        const scaleFactor = Math.sqrt(MAX_IMAGE_SIZE / rawBase64.length) * 0.9; // 90% of target to leave headroom
-        width = Math.round(width * scaleFactor);
-        height = Math.round(height * scaleFactor);
-        canvas.width = width;
-        canvas.height = height;
-
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        const resizedBase64 = dataUrl.split(',')[1];
-        resolve({ base64: resizedBase64, mimeType: 'image/jpeg' });
-      };
-      img.onerror = reject;
-      img.src = reader.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-export default function ImageUpload({ onImageReady }) {
+export default function ImageUpload({ onImageReady, onFileReady, initialImageUrl, label, compact }) {
   const [preview, setPreview] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState(null);
   const [processing, setProcessing] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Load initial image (support private path signed URL)
+  useEffect(() => {
+    if (initialImageUrl) {
+      if (initialImageUrl.startsWith('http')) {
+        setPreview(initialImageUrl);
+      } else {
+        getSignedImageUrl(initialImageUrl).then(url => {
+          if (url) setPreview(url);
+        });
+      }
+    } else {
+      setPreview(null);
+    }
+  }, [initialImageUrl]);
 
   const processFile = useCallback(async (file) => {
     setError(null);
@@ -62,20 +37,30 @@ export default function ImageUpload({ onImageReady }) {
 
     try {
       setProcessing(true);
-      const { base64, mimeType } = await resizeImage(file);
+      const compressedFile = await compressImage(file);
 
       // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
+      const previewUrl = URL.createObjectURL(compressedFile);
       setPreview(previewUrl);
 
-      onImageReady({ base64, mimeType });
+      // Trigger callbacks
+      onFileReady?.(compressedFile);
+
+      if (onImageReady) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const base64 = reader.result.split(',')[1];
+          onImageReady({ base64, mimeType: compressedFile.type });
+        };
+        reader.readAsDataURL(compressedFile);
+      }
     } catch (err) {
       setError('Failed to process image. Please try another file.');
       console.error('Image processing error:', err);
     } finally {
       setProcessing(false);
     }
-  }, [onImageReady]);
+  }, [onImageReady, onFileReady]);
 
   // Clipboard paste handler
   useEffect(() => {
@@ -124,13 +109,17 @@ export default function ImageUpload({ onImageReady }) {
     if (preview) URL.revokeObjectURL(preview);
     setPreview(null);
     setError(null);
-    onImageReady(null);
+    onImageReady?.(null);
+    onFileReady?.(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
+
+  const isCompact = !!compact;
 
   if (preview) {
     return (
       <div className="animate-in" style={{ position: 'relative' }}>
+        {label && <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-600)', marginBottom: 'var(--space-1)', display: 'block' }}>{label}</label>}
         <div
           style={{
             border: '2px solid var(--primary-200)',
@@ -145,7 +134,7 @@ export default function ImageUpload({ onImageReady }) {
             alt="Uploaded preview"
             style={{
               width: '100%',
-              maxHeight: '400px',
+              maxHeight: isCompact ? '120px' : '400px',
               objectFit: 'contain',
               display: 'block',
             }}
@@ -160,29 +149,25 @@ export default function ImageUpload({ onImageReady }) {
               background: 'rgba(0,0,0,0.6)',
               color: 'white',
               borderRadius: '50%',
-              width: '32px',
-              height: '32px',
+              width: '28px',
+              height: '28px',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
             title="Remove image"
           >
-            <X size={16} />
+            <X size={14} />
           </button>
         </div>
-        <p style={{
-          textAlign: 'center',
-          fontSize: 'var(--text-sm)',
-          color: 'var(--success-600)',
-          marginTop: 'var(--space-2)',
-          fontWeight: 'var(--weight-medium)',
-        }}>
-          ✓ Image ready for question generation
-        </p>
       </div>
     );
   }
 
   return (
     <div>
+      {label && <label style={{ fontSize: 'var(--text-xs)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-600)', marginBottom: 'var(--space-1)', display: 'block' }}>{label}</label>}
       <div
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -191,7 +176,7 @@ export default function ImageUpload({ onImageReady }) {
         style={{
           border: `2px dashed ${dragging ? 'var(--primary-400)' : 'var(--neutral-300)'}`,
           borderRadius: 'var(--radius-lg)',
-          padding: 'var(--space-10) var(--space-6)',
+          padding: isCompact ? 'var(--space-4) var(--space-2)' : 'var(--space-10) var(--space-6)',
           textAlign: 'center',
           cursor: 'pointer',
           background: dragging ? 'var(--primary-50)' : 'var(--neutral-50)',
@@ -200,56 +185,62 @@ export default function ImageUpload({ onImageReady }) {
       >
         {processing ? (
           <div>
-            <div className="spinner" style={{ margin: '0 auto var(--space-3)' }}>
-              <div className="spinner-circle" style={{ width: '32px', height: '32px', borderWidth: '3px' }}></div>
+            <div className="spinner" style={{ margin: '0 auto var(--space-2)' }}>
+              <div className="spinner-circle" style={{ width: '24px', height: '24px', borderWidth: '2px' }}></div>
             </div>
-            <p style={{ color: 'var(--neutral-600)', fontWeight: 'var(--weight-medium)' }}>
-              Processing image...
+            <p style={{ color: 'var(--neutral-600)', fontSize: 'var(--text-xs)' }}>
+              Processing...
             </p>
           </div>
         ) : (
           <>
-            <div
-              style={{
-                width: '56px',
-                height: '56px',
-                borderRadius: '50%',
-                background: 'var(--primary-100)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto var(--space-4)',
-                color: 'var(--primary-500)',
-              }}
-            >
-              <ImagePlus size={28} />
-            </div>
-            <p style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-800)', marginBottom: 'var(--space-1)' }}>
-              Drop an image here, or click to browse
-            </p>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', marginBottom: 'var(--space-4)' }}>
-              PNG, JPG, WebP, or GIF — max 4MB
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-3)' }}>
-              <span
-                className="btn btn-secondary btn-sm"
-                style={{ pointerEvents: 'none' }}
+            {!isCompact && (
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: 'var(--primary-100)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto var(--space-4)',
+                  color: 'var(--primary-500)',
+                }}
               >
-                <Upload size={14} /> Choose File
-              </span>
-              <span
-                className="btn btn-ghost btn-sm"
-                style={{ pointerEvents: 'none' }}
-              >
-                <Clipboard size={14} /> or Paste (Ctrl+V)
-              </span>
-            </div>
+                <ImagePlus size={28} />
+              </div>
+            )}
+            <p style={{ fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-800)', fontSize: isCompact ? 'var(--text-xs)' : 'var(--text-md)', marginBottom: 'var(--space-1)' }}>
+              {isCompact ? 'Click to add image' : 'Drop an image here, or click to browse'}
+            </p>
+            {!isCompact && (
+              <>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', marginBottom: 'var(--space-4)' }}>
+                  PNG, JPG, WebP, or GIF — compressed to max 250KB
+                </p>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-3)' }}>
+                  <span
+                    className="btn btn-secondary btn-sm"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    <Upload size={14} /> Choose File
+                  </span>
+                  <span
+                    className="btn btn-ghost btn-sm"
+                    style={{ pointerEvents: 'none' }}
+                  >
+                    <Clipboard size={14} /> or Paste (Ctrl+V)
+                  </span>
+                </div>
+              </>
+            )}
           </>
         )}
       </div>
 
       {error && (
-        <p style={{ color: 'var(--danger-500)', fontSize: 'var(--text-sm)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
+        <p style={{ color: 'var(--danger-500)', fontSize: 'var(--text-xs)', marginTop: 'var(--space-2)', textAlign: 'center' }}>
           {error}
         </p>
       )}

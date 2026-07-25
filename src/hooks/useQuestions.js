@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from './useAuth';
+import { uploadQuestionImage, uploadExplanationImage } from '../services/imageService';
 
 export function useQuestions() {
   const { user } = useAuth();
@@ -293,6 +294,8 @@ export function useQuestions() {
     incorrectOptions,
     explanation,
     tags = [],
+    questionImageFile = null,
+    explanationImageFile = null,
   }) => {
     if (!user) throw new Error('Not authenticated');
 
@@ -321,6 +324,34 @@ export function useQuestions() {
         .single();
 
       if (insertError) throw insertError;
+
+      // Upload files if provided
+      let qPath = null;
+      let ePath = null;
+
+      if (questionImageFile) {
+        qPath = await uploadQuestionImage(user.id, insertedQuestion.id, questionImageFile);
+      }
+      if (explanationImageFile) {
+        ePath = await uploadExplanationImage(user.id, insertedQuestion.id, explanationImageFile);
+      }
+
+      if (qPath || ePath) {
+        const { error: updateError } = await supabase
+          .from('questions')
+          .update({
+            question_image_url: qPath || null,
+            explanation_image_url: ePath || null,
+          })
+          .eq('id', insertedQuestion.id);
+
+        if (updateError) {
+          console.error('Error updating question image paths:', updateError);
+        } else {
+          insertedQuestion.question_image_url = qPath;
+          insertedQuestion.explanation_image_url = ePath;
+        }
+      }
 
       // Insert tags if any
       if (tags && tags.length > 0 && insertedQuestion) {
@@ -572,12 +603,27 @@ export function useQuestions() {
     explanation,
     option_explanations,
     tags,
+    questionImageFile,
+    explanationImageFile,
+    question_image_url,
+    explanation_image_url,
   }) => {
     if (!user) throw new Error('Not authenticated');
 
     try {
       setSaving(true);
       setError(null);
+
+      // 1. Process new file uploads if present
+      let qPath = question_image_url;
+      let ePath = explanation_image_url;
+
+      if (questionImageFile) {
+        qPath = await uploadQuestionImage(user.id, questionId, questionImageFile);
+      }
+      if (explanationImageFile) {
+        ePath = await uploadExplanationImage(user.id, questionId, explanationImageFile);
+      }
 
       const updates = {
         question_text: questionText,
@@ -588,6 +634,8 @@ export function useQuestions() {
           : null,
         explanation: explanation !== undefined ? (explanation || null) : undefined,
         option_explanations: option_explanations !== undefined ? (option_explanations || null) : undefined,
+        question_image_url: qPath !== undefined ? qPath : undefined,
+        explanation_image_url: ePath !== undefined ? ePath : undefined,
         updated_at: new Date().toISOString(),
       };
 

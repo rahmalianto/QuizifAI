@@ -75,7 +75,7 @@ export class OneNoteService {
    */
   async getPageContent(pageId) {
     const response = await fetch(
-      `${GRAPH_BASE_URL}/me/onenote/pages/${pageId}/content`,
+      `${GRAPH_BASE_URL}/me/onenote/pages/${pageId}/content?preAuthenticated=true`,
       {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
@@ -97,20 +97,70 @@ export class OneNoteService {
   }
 
   /**
+   * Fetch raw resource binary content from Graph API.
+   */
+  async getResourceBinary(resourceUrl) {
+    const response = await fetch(resourceUrl, {
+      headers: {
+        Authorization: `Bearer ${this.accessToken}`,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to fetch resource: ${response.status}`);
+    }
+    return response.blob();
+  }
+
+  /**
+   * Fetch and combine text content & images from multiple pages.
+   * Returns: { text: string, images: { base64: string, mimeType: string }[] }
+   */
+  async getPageData(pageIds) {
+    const texts = [];
+    const images = [];
+
+    for (const id of pageIds) {
+      const html = await this.getPageContent(id);
+      texts.push(extractTextFromHtml(html));
+
+      // Parse HTML to extract images
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const imgElements = doc.querySelectorAll('img');
+
+      for (const img of imgElements) {
+        const src = img.getAttribute('data-data-source') || img.getAttribute('src');
+        if (src && src.includes('/resources/')) {
+          try {
+            const blob = await this.getResourceBinary(src);
+            const mimeType = blob.type || 'image/jpeg';
+            const base64 = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result.split(',')[1]);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+            images.push({ base64, mimeType });
+          } catch (e) {
+            console.error('Error loading page image:', e);
+          }
+        }
+      }
+    }
+
+    return {
+      text: texts.filter((text) => text.trim().length > 0).join('\n\n---\n\n'),
+      images,
+    };
+  }
+
+  /**
    * Fetch and combine text content from multiple pages.
    * Returns a single string with all page texts concatenated.
    */
   async getCombinedPageText(pageIds) {
-    const results = await Promise.all(
-      pageIds.map(async (id) => {
-        const html = await this.getPageContent(id);
-        return extractTextFromHtml(html);
-      })
-    );
-
-    return results
-      .filter((text) => text.trim().length > 0)
-      .join('\n\n---\n\n');
+    const { text } = await this.getPageData(pageIds);
+    return text;
   }
 }
 

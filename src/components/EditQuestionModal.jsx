@@ -12,6 +12,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import TagInput from './TagInput';
+import ImageUpload from './ImageUpload';
 import { QUESTION_TYPE_LIST } from '../lib/constants';
 
 const ICONS = {
@@ -33,6 +34,12 @@ export default function EditQuestionModal({ question, saving, onSave, onClose, o
   const [explanation, setExplanation] = useState('');
   const [optionExplanations, setOptionExplanations] = useState({}); // { optionText: explanationText }
 
+  // Question & Explanation image values
+  const [questionImageUrl, setQuestionImageUrl] = useState(null);
+  const [explanationImageUrl, setExplanationImageUrl] = useState(null);
+  const [questionImageFile, setQuestionImageFile] = useState(null);
+  const [explanationImageFile, setExplanationImageFile] = useState(null);
+
   // Explanation generation state
   const [generatingExplanation, setGeneratingExplanation] = useState(false);
   const [explanationError, setExplanationError] = useState(null);
@@ -50,6 +57,10 @@ export default function EditQuestionModal({ question, saving, onSave, onClose, o
     setTags(question.tags || []);
     setExplanation(question.explanation || '');
     setOptionExplanations(question.option_explanations || {});
+    setQuestionImageUrl(question.question_image_url || null);
+    setExplanationImageUrl(question.explanation_image_url || null);
+    setQuestionImageFile(null);
+    setExplanationImageFile(null);
     setConfirmDelete(false);
     setExplanationError(null);
 
@@ -167,6 +178,10 @@ export default function EditQuestionModal({ question, saving, onSave, onClose, o
       explanation: explanation.trim() || null,
       option_explanations: Object.keys(cleanedOptionExplanations).length > 0 ? cleanedOptionExplanations : null,
       tags,
+      questionImageFile,
+      explanationImageFile,
+      question_image_url: questionImageUrl,
+      explanation_image_url: explanationImageUrl,
     });
   };
 
@@ -309,6 +324,19 @@ export default function EditQuestionModal({ question, saving, onSave, onClose, o
             />
           </div>
 
+          {/* Question Image (Optional) */}
+          <div className="input-group">
+            <ImageUpload
+              onFileReady={setQuestionImageFile}
+              onImageReady={(data) => {
+                if (!data) setQuestionImageUrl(null);
+              }}
+              initialImageUrl={questionImageUrl}
+              label="Question Image (Optional)"
+              compact={true}
+            />
+          </div>
+
           {/* Question-level Explanation — directly after Question Text */}
           <div className="input-group">
             <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -347,6 +375,19 @@ export default function EditQuestionModal({ question, saving, onSave, onClose, o
             {explanationError && (
               <p style={{ marginTop: 'var(--space-1)', fontSize: 'var(--text-xs)', color: 'var(--danger-600)' }}>{explanationError}</p>
             )}
+          </div>
+
+          {/* Explanation Image (Optional) */}
+          <div className="input-group">
+            <ImageUpload
+              onFileReady={setExplanationImageFile}
+              onImageReady={(data) => {
+                if (!data) setExplanationImageUrl(null);
+              }}
+              initialImageUrl={explanationImageUrl}
+              label="Explanation Image (Optional)"
+              compact={true}
+            />
           </div>
 
           {/* Answer Type */}

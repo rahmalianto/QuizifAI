@@ -12,6 +12,7 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import TagInput from './TagInput';
+import ImageUpload from './ImageUpload';
 import { useQuestions } from '../hooks/useQuestions';
 import { QUESTION_TYPE_LIST } from '../lib/constants';
 import toast from 'react-hot-toast';
@@ -40,6 +41,10 @@ export default function ManualQuestionForm({ categories, createCategory }) {
   const [longAnswerText, setLongAnswerText] = useState('');
   const [tags, setTags] = useState([]);
   const [explanation, setExplanation] = useState('');
+
+  // Image Upload files
+  const [questionImageFile, setQuestionImageFile] = useState(null);
+  const [explanationImageFile, setExplanationImageFile] = useState(null);
 
   // Pre-select first category if available
   useEffect(() => {
@@ -174,6 +179,8 @@ export default function ManualQuestionForm({ categories, createCategory }) {
         incorrectOptions,
         explanation: explanation.trim() || null,
         tags,
+        questionImageFile,
+        explanationImageFile,
       });
 
       toast.success('Question created successfully!');
@@ -187,6 +194,8 @@ export default function ManualQuestionForm({ categories, createCategory }) {
       setLongAnswerText('');
       setTags([]);
       setExplanation('');
+      setQuestionImageFile(null);
+      setExplanationImageFile(null);
     } catch (err) {
       toast.error(err.message || 'Failed to save question');
     }
@@ -242,6 +251,15 @@ export default function ManualQuestionForm({ categories, createCategory }) {
               style={{ minHeight: '100px' }}
               disabled={saving}
               required
+            />
+          </div>
+
+          {/* Question Image (Optional) */}
+          <div className="input-group">
+            <ImageUpload
+              onFileReady={setQuestionImageFile}
+              label="Question Image (Optional)"
+              compact={true}
             />
           </div>
 
@@ -488,6 +506,15 @@ export default function ManualQuestionForm({ categories, createCategory }) {
               disabled={saving}
               rows={3}
               style={{ minHeight: '80px', resize: 'vertical' }}
+            />
+          </div>
+
+          {/* Explanation Image (Optional) */}
+          <div className="input-group">
+            <ImageUpload
+              onFileReady={setExplanationImageFile}
+              label="Explanation Image (Optional)"
+              compact={true}
             />
           </div>
         </div>

@@ -6,10 +6,12 @@ import { useTags } from '../hooks/useTags';
 import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
+import { getSignedImageUrl } from '../services/imageService';
 import { Dices, ArrowRight, CheckCircle, Eye, Settings, Trophy, RotateCcw, Sparkles, Save, Check } from 'lucide-react';
 
 export default function PracticePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { fetchAllQuestions, fetchPrioritizedPracticeQuestions, savePracticeActivity, fetchPracticeConfiguration, savePracticeConfiguration, generateExplanation, saveExplanation } = useQuestions();
   const { categories, fetchCategories } = useCategories();
   const { tags, fetchTags } = useTags();
@@ -38,6 +40,8 @@ export default function PracticePage() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [selectedAnswers, setSelectedAnswers] = useState([]);
   const [currentOptions, setCurrentOptions] = useState([]);
+  const [questionImageUrl, setQuestionImageUrl] = useState(null);
+  const [explanationImageUrl, setExplanationImageUrl] = useState(null);
 
   // Explanation state
   const [generatedExplanation, setGeneratedExplanation] = useState(null);
@@ -58,6 +62,22 @@ export default function PracticePage() {
       try {
         const data = await fetchAllQuestions();
         setAllQuestions(data);
+        
+        // Auto start if single question practice requested
+        if (location.state?.directQuestionId) {
+          const directQuestion = data.find(q => q.id === location.state.directQuestionId);
+          if (directQuestion) {
+            const uuid = typeof window.crypto?.randomUUID === 'function' 
+              ? window.crypto.randomUUID() 
+              : Math.random().toString(36).substring(2) + Date.now().toString(36);
+            setSessionId(uuid);
+            setSessionScore(0);
+            setCurrentQueueIndex(0);
+            setSessionQueue([directQuestion]);
+            setupQuestion(directQuestion);
+            setPracticeState('PRACTICING');
+          }
+        }
       } catch (err) {
         console.error('Failed to load questions', err);
       } finally {
@@ -65,9 +85,7 @@ export default function PracticePage() {
       }
     };
     loadQuestions();
-  }, [fetchAllQuestions]);
-
-  const location = useLocation();
+  }, [fetchAllQuestions, location.state]);
 
   // Fetch default configuration — but skip if we were given a preset via navigation state
   useEffect(() => {
@@ -80,6 +98,15 @@ export default function PracticePage() {
           setSelectedTags(location.state.preSelectedTags);
         return;
       }
+      
+      // Bypassing setup if practicing a specific single question directly
+      if (location.state?.directQuestionId) {
+        setSelectedCategories([]);
+        setSelectedTags([]);
+        setSelectedCount(1);
+        return;
+      }
+
       const conf = await fetchPracticeConfiguration();
       if (conf) {
         if (conf.category && conf.category.length > 0) setSelectedCategories(conf.category);
@@ -99,17 +126,21 @@ export default function PracticePage() {
         const matchTag = selectedTags.length === 0 || (q.tags && q.tags.some(t => selectedTags.includes(t)));
         return matchCat && matchTag; // ANY category AND ANY tag
       });
+    } else if (location.state?.directQuestionId) {
+      filtered = allQuestions.filter(q => q.id === location.state.directQuestionId);
     }
     setFilteredQuestions(filtered);
     
     // Auto-adjust bounds for slider
-    const maxAllowed = Math.min(30, filtered.length);
-    if (selectedCount > maxAllowed) {
+    const maxAllowed = Math.max(1, Math.min(30, filtered.length));
+    if (location.state?.directQuestionId) {
+      setSelectedCount(1);
+    } else if (selectedCount > maxAllowed) {
       setSelectedCount(maxAllowed);
     } else if (filtered.length > 0 && selectedCount === 0) {
       setSelectedCount(Math.min(10, maxAllowed));
     }
-  }, [allQuestions, selectedCategories, selectedTags, selectedCount]);
+  }, [allQuestions, selectedCategories, selectedTags, selectedCount, location.state]);
 
   const toggleCategory = (id) => {
     setSelectedCategories(prev => prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]);
@@ -138,7 +169,10 @@ export default function PracticePage() {
       }
 
       // Create a new session
-      setSessionId(crypto.randomUUID());
+      const uuid = typeof window.crypto?.randomUUID === 'function' 
+        ? window.crypto.randomUUID() 
+        : Math.random().toString(36).substring(2) + Date.now().toString(36);
+      setSessionId(uuid);
       setSessionScore(0);
       setCurrentQueueIndex(0);
       
@@ -173,6 +207,23 @@ export default function PracticePage() {
     setShowAnswer(false);
     setSelectedAnswers([]);
     setCurrentOptions(options);
+    setQuestionImageUrl(null);
+    setExplanationImageUrl(null);
+
+    // Load private signed URL for question image if set
+    if (q.question_image_url) {
+      getSignedImageUrl(q.question_image_url).then(url => {
+        if (url) setQuestionImageUrl(url);
+      });
+    }
+
+    // Load private signed URL for explanation image if set
+    if (q.explanation_image_url) {
+      getSignedImageUrl(q.explanation_image_url).then(url => {
+        if (url) setExplanationImageUrl(url);
+      });
+    }
+
     // Reset explanation state for each new question
     setGeneratedExplanation(null);
     setGeneratingExplanation(false);
@@ -612,6 +663,17 @@ export default function PracticePage() {
             <h3 style={{ fontSize: 'var(--text-xl)', lineHeight: '1.6', marginBottom: 'var(--space-6)', color: 'var(--neutral-900)' }}>
               {currentQuestion?.question_text}
             </h3>
+
+            {/* Question Image (Private Signed URL) */}
+            {questionImageUrl && (
+              <div style={{ marginBottom: 'var(--space-6)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)', maxHeight: '300px', background: 'var(--neutral-50)' }}>
+                <img 
+                  src={questionImageUrl} 
+                  alt="Question visual reference" 
+                  style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }} 
+                />
+              </div>
+            )}
             
             {renderOptions()}
             
@@ -709,6 +771,15 @@ export default function PracticePage() {
                   const dbOptionExplanations = currentQuestion?.option_explanations;
                   return (
                     <>
+                      {explanationImageUrl && (
+                        <div style={{ marginBottom: 'var(--space-4)', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--warning-200)', maxHeight: '200px', background: 'white' }}>
+                          <img 
+                            src={explanationImageUrl} 
+                            alt="Explanation visual reference" 
+                            style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', display: 'block' }} 
+                          />
+                        </div>
+                      )}
                       <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-800)', lineHeight: '1.6', marginBottom: dbOptionExplanations ? 'var(--space-4)' : '0' }}>
                         {existingExplanation}
                       </p>
