@@ -1579,3 +1579,10 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-size: var(--text-sm);
   color: var(--neutral-400);
 }
+
+/* Custom Dropdown Item Hover */
+.dropdown-item-custom:hover {
+  background-color: var(--neutral-100) !important;
+  text-decoration: none;
+}
+

@@ -15,6 +15,7 @@ import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import ChatPage from './pages/ChatPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import UpdatePasswordPage from './pages/UpdatePasswordPage';
+import SettingsPage from './pages/SettingsPage';
 
 function AuthRedirect({ children }) {
   const { user, loading } = useAuth();
@@ -139,6 +140,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <ChatPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         }
       />
