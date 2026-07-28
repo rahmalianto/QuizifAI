@@ -136,30 +136,119 @@ serve(async (req) => {
         .map((m: any) => `[Page ID: ${m.page_id}]\n${m.content}`)
         .join("\n\n---\n\n");
 
-      // 4. Call Gemini Flash for chat
-      const prompt = `You are a helpful assistant answering questions based on the provided OneNote context.
-If the answer is not in the context, say so. Do not hallucinate.
+      // 4. Fetch user API configurations
+      const { data: configs, error: configError } = await supabaseClient
+        .from("user_api_configs")
+        .select("*")
+        .eq("is_enabled", true)
+        .order("priority", { ascending: true });
 
-Context:
-${contextText}
+      if (configError) throw configError;
+      if (!configs || configs.length === 0) {
+        throw new Error("No enabled API configurations found. Please configure your API keys in Settings.");
+      }
 
-Question: ${query}`;
+      const prompt = `You are a helpful assistant answering questions based on the provided OneNote context.\nIf the answer is not in the context, say so. Do not hallucinate.\n\nContext:\n${contextText}\n\nQuestion: ${query}`;
 
-      const geminiChatRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-          }),
+      let answer = "";
+      let finalError = null;
+
+      for (const config of configs) {
+        try {
+          if (config.provider === "google") {
+            const res = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${config.model_name}:generateContent?key=${config.api_key}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                }),
+              }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "Google AI Error");
+            answer = data.candidates?.[0]?.content?.parts?.[0]?.text;
+          } else if (config.provider === "openai") {
+            const res = await fetch("https://api.openai.com/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${config.api_key}`,
+              },
+              body: JSON.stringify({
+                model: config.model_name,
+                messages: [{ role: "user", content: prompt }],
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "OpenAI Error");
+            answer = data.choices?.[0]?.message?.content;
+          } else if (config.provider === "anthropic") {
+            const res = await fetch("https://api.anthropic.com/v1/messages", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-api-key": config.api_key,
+                "anthropic-version": "2023-06-01",
+              },
+              body: JSON.stringify({
+                model: config.model_name,
+                max_tokens: 1000,
+                messages: [{ role: "user", content: prompt }],
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "Anthropic Error");
+            answer = data.content?.[0]?.text;
+          } else if (config.provider === "groq") {
+            const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${config.api_key}`,
+              },
+              body: JSON.stringify({
+                model: config.model_name,
+                messages: [{ role: "user", content: prompt }],
+              }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || "Groq Error");
+            answer = data.choices?.[0]?.message?.content;
+          } else if (config.provider === "cloudflare") {
+            const [accountId, token] = config.api_key.split(":");
+            if (!accountId || !token) throw new Error("Invalid Cloudflare credentials format.");
+            const res = await fetch(
+              `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${config.model_name}`,
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                  messages: [{ role: "user", content: prompt }],
+                }),
+              }
+            );
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.errors?.[0]?.message || "Cloudflare Error");
+            answer = data.result?.response;
+          }
+
+          if (answer) {
+            break;
+          }
+        } catch (err: any) {
+          console.error(`${config.provider} failed:`, err);
+          finalError = err;
         }
-      );
+      }
 
-      const chatData = await geminiChatRes.json();
-      if (!geminiChatRes.ok) throw new Error(chatData.error?.message || "Gemini Chat Error");
-
-      const answer = chatData.candidates?.[0]?.content?.parts?.[0]?.text || "No response generated.";
+      if (!answer) {
+        throw new Error(finalError?.message || "All configured AI providers failed to generate a response.");
+      }
 
       await supabaseClient.from("chat_messages").insert({
         session_id: activeSessionId,

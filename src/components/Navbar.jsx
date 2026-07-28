@@ -135,7 +135,7 @@ export default function Navbar() {
               id="btn-profile-dropdown"
               title="User Profile"
             >
-              <div className="avatar">{getInitials(user?.email)}</div>
+              <div className="avatar" style={{ backgroundColor: 'var(--primary-500)', color: 'white' }}>{getInitials(user?.email)}</div>
             </button>
 
             {dropdownOpen && (

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import Navbar from '../components/Navbar';
-import { Save, Eye, EyeOff, Settings, Plus, Trash2 } from 'lucide-react';
+import { Save, Eye, EyeOff, Settings, Plus, Trash2, CheckCircle2, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const PROVIDER_OPTIONS = [
@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [configs, setConfigs] = useState([]);
   const [showKeys, setShowKeys] = useState({});
+  const [testingKeys, setTestingKeys] = useState({});
   const [removedProviders, setRemovedProviders] = useState([]);
 
   useEffect(() => { fetchConfigs(); }, []);
@@ -87,6 +88,34 @@ export default function SettingsPage() {
     const filtered = configs.filter((_, idx) => idx !== index);
     filtered.forEach((c, idx) => { c.priority = idx; });
     setConfigs(filtered);
+  };
+
+  const handleTestKey = async (index) => {
+    const config = configs[index];
+    if (!config.api_key.trim()) {
+      toast.error('Please enter an API key to test');
+      return;
+    }
+
+    setTestingKeys(prev => ({ ...prev, [index]: true }));
+    try {
+      const { data, error } = await supabase.functions.invoke('test-api-key', {
+        body: { provider: config.provider, api_key: config.api_key.trim(), model_name: config.model_name.trim() }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Success! ${PROVIDER_OPTIONS.find(p => p.id === config.provider).name} key is valid.`);
+      } else {
+        toast.error(`Invalid API Key: ${data?.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Error testing key:', err);
+      toast.error('Failed to test API key. Please check your connection.');
+    } finally {
+      setTestingKeys(prev => ({ ...prev, [index]: false }));
+    }
   };
 
   const handleSave = async () => {
@@ -178,7 +207,7 @@ export default function SettingsPage() {
                         <th style={thStyle}>API Priority</th>
                         <th style={thStyle}>API Key</th>
                         <th style={{ ...thStyle, textAlign: 'center' }}>Disabled</th>
-                        <th style={thStyle}>Default Model</th>
+                        <th style={thStyle}>AI Model Code</th>
                         <th style={{ ...thStyle, width: '40px' }}></th>
                       </tr>
                     </thead>
@@ -264,8 +293,17 @@ export default function SettingsPage() {
                               />
                             </td>
 
-                            {/* Remove */}
-                            <td style={{ ...tdStyle, textAlign: 'center' }}>
+                            {/* Actions (Check & Remove) */}
+                            <td style={{ ...tdStyle, textAlign: 'right', whiteSpace: 'nowrap' }}>
+                              <button
+                                className="btn btn-ghost btn-sm p-1 me-2"
+                                onClick={() => handleTestKey(index)}
+                                disabled={testingKeys[index] || !config.api_key.trim()}
+                                title="Test API Key"
+                                style={{ color: 'var(--primary-600)', lineHeight: 1 }}
+                              >
+                                {testingKeys[index] ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                              </button>
                               <button
                                 className="btn btn-ghost btn-sm p-1"
                                 onClick={() => handleRemoveRow(index)}
@@ -273,7 +311,7 @@ export default function SettingsPage() {
                                 title="Remove"
                                 style={{ color: configs.length > 1 ? 'var(--danger-500)' : 'var(--neutral-300)', lineHeight: 1 }}
                               >
-                                <Trash2 size={14} />
+                                <Trash2 size={16} />
                               </button>
                             </td>
                           </tr>
