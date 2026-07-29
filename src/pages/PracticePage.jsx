@@ -15,11 +15,11 @@ export default function PracticePage() {
   const { fetchAllQuestions, fetchPrioritizedPracticeQuestions, savePracticeActivity, fetchPracticeConfiguration, savePracticeConfiguration, generateExplanation, saveExplanation } = useQuestions();
   const { categories, fetchCategories } = useCategories();
   const { tags, fetchTags } = useTags();
-  
+
   // Data state
   const [allQuestions, setAllQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Configuration state
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
@@ -29,7 +29,7 @@ export default function PracticePage() {
   // Practice flow state
   const [practiceState, setPracticeState] = useState('SETUP'); // 'SETUP' | 'PRACTICING' | 'SUMMARY'
   const [selectedCount, setSelectedCount] = useState(10);
-  
+
   // Session state
   const [sessionQueue, setSessionQueue] = useState([]);
   const [currentQueueIndex, setCurrentQueueIndex] = useState(0);
@@ -62,13 +62,13 @@ export default function PracticePage() {
       try {
         const data = await fetchAllQuestions();
         setAllQuestions(data);
-        
+
         // Auto start if single question practice requested
         if (location.state?.directQuestionId) {
           const directQuestion = data.find(q => q.id === location.state.directQuestionId);
           if (directQuestion) {
-            const uuid = typeof window.crypto?.randomUUID === 'function' 
-              ? window.crypto.randomUUID() 
+            const uuid = typeof window.crypto?.randomUUID === 'function'
+              ? window.crypto.randomUUID()
               : Math.random().toString(36).substring(2) + Date.now().toString(36);
             setSessionId(uuid);
             setSessionScore(0);
@@ -98,7 +98,7 @@ export default function PracticePage() {
           setSelectedTags(location.state.preSelectedTags);
         return;
       }
-      
+
       // Bypassing setup if practicing a specific single question directly
       if (location.state?.directQuestionId) {
         setSelectedCategories([]);
@@ -130,7 +130,7 @@ export default function PracticePage() {
       filtered = allQuestions.filter(q => q.id === location.state.directQuestionId);
     }
     setFilteredQuestions(filtered);
-    
+
     // Auto-adjust bounds for slider
     const maxAllowed = Math.max(1, Math.min(30, filtered.length));
     if (location.state?.directQuestionId) {
@@ -169,18 +169,18 @@ export default function PracticePage() {
       }
 
       // Create a new session
-      const uuid = typeof window.crypto?.randomUUID === 'function' 
-        ? window.crypto.randomUUID() 
+      const uuid = typeof window.crypto?.randomUUID === 'function'
+        ? window.crypto.randomUUID()
         : Math.random().toString(36).substring(2) + Date.now().toString(36);
       setSessionId(uuid);
       setSessionScore(0);
       setCurrentQueueIndex(0);
-      
+
       setSessionQueue(queue);
-      
+
       // Setup first question
       setupQuestion(queue[0]);
-      
+
       // Switch state
       setPracticeState('PRACTICING');
     } catch (err) {
@@ -192,10 +192,10 @@ export default function PracticePage() {
 
   const setupQuestion = (q) => {
     if (!q) return;
-    
+
     let options = [];
     if (q.answer_type === 'TRUE_FALSE') {
-      options = ['True', 'False']; 
+      options = ['True', 'False'];
     } else if (q.answer_type === 'MULTIPLE_CHOICE' || q.answer_type === 'CHECKBOX') {
       options = [...(q.correct_answers || []), ...(q.incorrect_options || [])];
       for (let i = options.length - 1; i > 0; i--) {
@@ -238,7 +238,7 @@ export default function PracticePage() {
     const currentQuestion = sessionQueue[currentQueueIndex];
     const type = currentQuestion?.answer_type;
     if (type === 'CHECKBOX') {
-      setSelectedAnswers(prev => 
+      setSelectedAnswers(prev =>
         prev.includes(opt) ? prev.filter(a => a !== opt) : [...prev, opt]
       );
     } else {
@@ -252,7 +252,7 @@ export default function PracticePage() {
     const question = sessionQueue[currentQueueIndex];
     let score = 0;
     const correctAnswers = question.correct_answers || [];
-    
+
     if (question.answer_type === 'MULTIPLE_CHOICE' || question.answer_type === 'TRUE_FALSE') {
       const isCorrect = selectedAnswers.length === 1 && correctAnswers.includes(selectedAnswers[0]);
       score = isCorrect ? 1 : 0;
@@ -351,20 +351,20 @@ export default function PracticePage() {
               <p style={{ color: 'var(--neutral-600)', marginBottom: 'var(--space-8)' }}>
                 Filter by categories and tags to build your practice queue.
               </p>
-              
+
               <div style={{ marginBottom: 'var(--space-6)', textAlign: 'left' }}>
                 <label style={{ fontWeight: 'var(--weight-medium)', color: 'var(--neutral-700)', display: 'block', marginBottom: 'var(--space-3)' }}>Categories</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                   {categories.map(cat => (
-                    <div 
+                    <div
                       key={cat.id}
                       onClick={() => toggleCategory(cat.id)}
                       className="badge"
-                      style={{ 
-                        cursor: 'pointer', 
+                      style={{
+                        cursor: 'pointer',
                         padding: 'var(--space-2) var(--space-3)',
-                        border: selectedCategories.includes(cat.id) ? 'none' : '1px solid var(--neutral-300)', 
-                        background: selectedCategories.includes(cat.id) ? 'var(--primary-500)' : 'var(--neutral-100)', 
+                        border: selectedCategories.includes(cat.id) ? 'none' : '1px solid var(--neutral-300)',
+                        background: selectedCategories.includes(cat.id) ? 'var(--primary-500)' : 'var(--neutral-100)',
                         color: selectedCategories.includes(cat.id) ? 'white' : 'var(--neutral-700)',
                         transition: 'all 0.2s ease'
                       }}
@@ -380,15 +380,15 @@ export default function PracticePage() {
                 <label style={{ fontWeight: 'var(--weight-medium)', color: 'var(--neutral-700)', display: 'block', marginBottom: 'var(--space-3)' }}>Tags</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
                   {tags.map(tag => (
-                    <div 
+                    <div
                       key={tag.id}
                       onClick={() => toggleTag(tag.name)}
                       className="badge"
-                      style={{ 
-                        cursor: 'pointer', 
+                      style={{
+                        cursor: 'pointer',
                         padding: 'var(--space-2) var(--space-3)',
-                        border: selectedTags.includes(tag.name) ? 'none' : '1px solid var(--neutral-300)', 
-                        background: selectedTags.includes(tag.name) ? 'var(--primary-500)' : 'var(--neutral-100)', 
+                        border: selectedTags.includes(tag.name) ? 'none' : '1px solid var(--neutral-300)',
+                        background: selectedTags.includes(tag.name) ? 'var(--primary-500)' : 'var(--neutral-100)',
                         color: selectedTags.includes(tag.name) ? 'white' : 'var(--neutral-700)',
                         transition: 'all 0.2s ease'
                       }}
@@ -405,11 +405,11 @@ export default function PracticePage() {
                   <label style={{ fontWeight: 'var(--weight-medium)', color: 'var(--neutral-700)' }}>Number of Questions (Max 30)</label>
                   <span style={{ fontWeight: 'var(--weight-bold)', color: 'var(--primary-600)' }}>{selectedCount}</span>
                 </div>
-                <input 
-                  type="range" 
-                  min={maxAllowed > 0 ? 1 : 0} 
-                  max={maxAllowed} 
-                  value={selectedCount} 
+                <input
+                  type="range"
+                  min={maxAllowed > 0 ? 1 : 0}
+                  max={maxAllowed}
+                  value={selectedCount}
                   onChange={(e) => setSelectedCount(parseInt(e.target.value))}
                   disabled={maxAllowed === 0}
                   style={{ width: '100%', cursor: maxAllowed > 0 ? 'pointer' : 'not-allowed' }}
@@ -422,18 +422,18 @@ export default function PracticePage() {
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 'var(--space-6)' }}>
                 <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', cursor: 'pointer', fontSize: 'var(--text-sm)', color: 'var(--neutral-600)' }}>
-                  <input 
-                    type="checkbox" 
-                    checked={setAsDefault} 
-                    onChange={(e) => setSetAsDefault(e.target.checked)} 
+                  <input
+                    type="checkbox"
+                    checked={setAsDefault}
+                    onChange={(e) => setSetAsDefault(e.target.checked)}
                     style={{ width: '16px', height: '16px', cursor: 'pointer' }}
                   />
                   Set this as default?
                 </label>
               </div>
 
-              <button 
-                className="btn btn-primary btn-lg" 
+              <button
+                className="btn btn-primary btn-lg"
                 style={{ width: '100%' }}
                 onClick={startPractice}
                 disabled={filteredQuestions.length === 0}
@@ -458,7 +458,7 @@ export default function PracticePage() {
     let message = "Good effort!";
     if (scorePercentage >= 90) message = "Outstanding!";
     else if (scorePercentage >= 70) message = "Great job!";
-    
+
     return (
       <>
         <Navbar />
@@ -472,7 +472,7 @@ export default function PracticePage() {
               </div>
               <h2 style={{ marginBottom: 'var(--space-2)' }}>Session Complete</h2>
               <p style={{ color: 'var(--neutral-600)', marginBottom: 'var(--space-8)' }}>{message}</p>
-              
+
               <div style={{ background: 'var(--neutral-50)', padding: 'var(--space-6)', borderRadius: 'var(--radius-lg)', marginBottom: 'var(--space-8)' }}>
                 <div style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 'var(--space-2)' }}>Your Score</div>
                 <div style={{ fontSize: '48px', fontWeight: '900', color: 'var(--neutral-800)', lineHeight: '1' }}>
@@ -484,15 +484,15 @@ export default function PracticePage() {
               </div>
 
               <div style={{ display: 'flex', gap: 'var(--space-4)' }}>
-                <button 
-                  className="btn btn-secondary btn-lg" 
+                <button
+                  className="btn btn-secondary btn-lg"
                   style={{ flex: 1 }}
                   onClick={() => navigate('/')}
                 >
                   Dashboard
                 </button>
-                <button 
-                  className="btn btn-primary btn-lg" 
+                <button
+                  className="btn btn-primary btn-lg"
                   style={{ flex: 1 }}
                   onClick={() => setPracticeState('SETUP')}
                 >
@@ -512,20 +512,43 @@ export default function PracticePage() {
   const currentQuestion = sessionQueue[currentQueueIndex];
   const progressPct = ((currentQueueIndex) / sessionQueue.length) * 100;
 
+  // Shared handler — generate or regenerate explanation for the current question
+  const handleGenerateExplanation = async () => {
+    setGeneratingExplanation(true);
+    setExplanationError(null);
+    try {
+      const result = await generateExplanation({
+        questionText: currentQuestion.question_text,
+        answerType: currentQuestion.answer_type,
+        correctAnswers: currentQuestion.correct_answers,
+        incorrectOptions: currentQuestion.incorrect_options,
+      });
+      setGeneratedExplanation(result);
+      setExplanationOpen(true);
+      // Reset save state so the Save button reappears for the new result
+      setExplanationSaved(false);
+      setSavingExplanation(false);
+    } catch (e) {
+      setExplanationError('Failed to generate explanation. Please try again.');
+    } finally {
+      setGeneratingExplanation(false);
+    }
+  };
+
   const renderOptions = () => {
     if (!currentQuestion) return null;
-    
+
     if (currentQuestion.answer_type === 'MULTIPLE_CHOICE' || currentQuestion.answer_type === 'CHECKBOX' || currentQuestion.answer_type === 'TRUE_FALSE') {
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
           {currentOptions.map((opt, i) => {
             const isCorrect = currentQuestion.correct_answers.includes(opt);
             const isSelected = selectedAnswers.includes(opt);
-            
+
             let bgClass = 'var(--neutral-50)';
             let borderClass = 'var(--border-light)';
             let textColor = 'var(--neutral-800)';
-            
+
             if (showAnswer) {
               if (isCorrect) {
                 bgClass = 'var(--success-50)';
@@ -544,9 +567,9 @@ export default function PracticePage() {
               borderClass = 'var(--primary-500)';
               textColor = 'var(--primary-700)';
             }
-            
+
             return (
-              <div 
+              <div
                 key={i}
                 onClick={() => handleOptionClick(opt)}
                 style={{
@@ -562,9 +585,9 @@ export default function PracticePage() {
                   opacity: showAnswer && !isCorrect && !isSelected ? 0.6 : 1
                 }}
               >
-                <div style={{ 
-                  width: '28px', height: '28px', borderRadius: '50%', 
-                  background: showAnswer ? (isCorrect ? 'var(--success-500)' : isSelected ? 'var(--danger-500)' : 'white') : (isSelected ? 'var(--primary-500)' : 'white'), 
+                <div style={{
+                  width: '28px', height: '28px', borderRadius: '50%',
+                  background: showAnswer ? (isCorrect ? 'var(--success-500)' : isSelected ? 'var(--danger-500)' : 'white') : (isSelected ? 'var(--primary-500)' : 'white'),
                   border: showAnswer ? 'none' : (isSelected ? 'none' : '1px solid var(--neutral-300)'),
                   color: showAnswer ? (isCorrect || isSelected ? 'white' : 'var(--neutral-600)') : (isSelected ? 'white' : 'var(--neutral-600)'),
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -581,22 +604,22 @@ export default function PracticePage() {
         </div>
       );
     }
-    
+
     if (currentQuestion.answer_type === 'OPEN_ENDED') {
       return (
         <div style={{ marginTop: 'var(--space-4)' }}>
-          <textarea 
+          <textarea
             placeholder="Type your answer here..."
             value={selectedAnswers[0] || ''}
             onChange={(e) => {
               if (!showAnswer) setSelectedAnswers([e.target.value]);
             }}
             disabled={showAnswer}
-            style={{ 
-              width: '100%', 
-              minHeight: '100px', 
-              padding: 'var(--space-3)', 
-              borderRadius: 'var(--radius-md)', 
+            style={{
+              width: '100%',
+              minHeight: '100px',
+              padding: 'var(--space-3)',
+              borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-light)',
               background: showAnswer ? 'var(--neutral-100)' : 'white',
               fontSize: 'var(--text-md)',
@@ -606,7 +629,7 @@ export default function PracticePage() {
         </div>
       );
     }
-    
+
     return null;
   };
 
@@ -615,14 +638,14 @@ export default function PracticePage() {
       <Navbar />
       <main className="page">
         <div className="container" style={{ maxWidth: '700px' }}>
-          
+
           <div style={{ marginBottom: 'var(--space-6)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
               <span style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)' }}>
                 Question {currentQueueIndex + 1} of {sessionQueue.length}
               </span>
-              <button 
-                className="btn btn-ghost btn-sm" 
+              <button
+                className="btn btn-ghost btn-sm"
                 onClick={() => setPracticeState('SETUP')}
                 style={{ color: 'var(--danger-500)' }}
               >
@@ -630,19 +653,19 @@ export default function PracticePage() {
               </button>
             </div>
             <div style={{ height: '6px', background: 'var(--neutral-200)', borderRadius: '3px', overflow: 'hidden' }}>
-              <div 
+              <div
                 style={{ height: '100%', width: `${progressPct}%`, background: 'var(--primary-500)', transition: 'width 0.3s ease' }}
               />
             </div>
           </div>
-          
+
           <div className="card animate-in" style={{ padding: 'var(--space-8)', boxShadow: 'var(--shadow-md)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-6)', paddingBottom: 'var(--space-4)', borderBottom: '1px solid var(--border-light)' }}>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)', alignItems: 'center' }}>
                 <span className="badge badge-primary" style={{ padding: 'var(--space-1) var(--space-3)', fontSize: 'var(--text-sm)' }}>
                   {currentQuestion?.answer_type?.replace('_', ' ')}
                 </span>
-                
+
                 {currentQuestion?.category_name && currentQuestion?.category_id && (
                   <Link to={`/categories/${currentQuestion.category_id}`} style={{ textDecoration: 'none' }}>
                     <span className="badge badge-interactive" style={{ background: 'var(--neutral-100)', color: 'var(--neutral-700)', border: '1px solid var(--neutral-200)', cursor: 'pointer' }}>
@@ -659,7 +682,7 @@ export default function PracticePage() {
                 ))}
               </div>
             </div>
-            
+
             <h3 style={{ fontSize: 'var(--text-xl)', lineHeight: '1.6', marginBottom: 'var(--space-6)', color: 'var(--neutral-900)' }}>
               {currentQuestion?.question_text}
             </h3>
@@ -667,21 +690,21 @@ export default function PracticePage() {
             {/* Question Image (Private Signed URL) */}
             {questionImageUrl && (
               <div style={{ marginBottom: 'var(--space-6)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border-light)', maxHeight: '300px', background: 'var(--neutral-50)' }}>
-                <img 
-                  src={questionImageUrl} 
-                  alt="Question visual reference" 
-                  style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }} 
+                <img
+                  src={questionImageUrl}
+                  alt="Question visual reference"
+                  style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', display: 'block' }}
                 />
               </div>
             )}
-            
+
             {renderOptions()}
-            
+
             {showAnswer && currentQuestion?.answer_type === 'OPEN_ENDED' && (
-              <div className="animate-in fade-in" style={{ 
-                marginTop: 'var(--space-6)', 
-                padding: 'var(--space-5)', 
-                background: 'var(--success-50)', 
+              <div className="animate-in fade-in" style={{
+                marginTop: 'var(--space-6)',
+                padding: 'var(--space-5)',
+                background: 'var(--success-50)',
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--success-200)'
               }}>
@@ -726,7 +749,21 @@ export default function PracticePage() {
                           })}
                         </div>
                       )}
-                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      {/* Footer: Regenerate + Save */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          id="btn-regenerate-explanation-generated"
+                          disabled={generatingExplanation || savingExplanation}
+                          onClick={handleGenerateExplanation}
+                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--neutral-500)', fontSize: 'var(--text-sm)' }}
+                        >
+                          {generatingExplanation ? (
+                            <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Regenerating...</>
+                          ) : (
+                            <><Sparkles size={14} /> Regenerate</>
+                          )}
+                        </button>
                         {explanationSaved ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--success-600)', fontWeight: 'var(--weight-medium)' }}>
                             <Check size={16} /> Explanation saved!
@@ -734,7 +771,7 @@ export default function PracticePage() {
                         ) : (
                           <button
                             className="btn btn-secondary btn-sm"
-                            disabled={savingExplanation}
+                            disabled={savingExplanation || generatingExplanation}
                             onClick={async () => {
                               setSavingExplanation(true);
                               try {
@@ -767,16 +804,16 @@ export default function PracticePage() {
                   );
                 }
 
-                if (hasExistingExplanation) {
+                if (hasExistingExplanation && !hasGeneratedExplanation) {
                   const dbOptionExplanations = currentQuestion?.option_explanations;
                   return (
                     <>
                       {explanationImageUrl && (
                         <div style={{ marginBottom: 'var(--space-4)', borderRadius: 'var(--radius-md)', overflow: 'hidden', border: '1px solid var(--warning-200)', maxHeight: '200px', background: 'white' }}>
-                          <img 
-                            src={explanationImageUrl} 
-                            alt="Explanation visual reference" 
-                            style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', display: 'block' }} 
+                          <img
+                            src={explanationImageUrl}
+                            alt="Explanation visual reference"
+                            style={{ width: '100%', maxHeight: '200px', objectFit: 'contain', display: 'block' }}
                           />
                         </div>
                       )}
@@ -799,9 +836,29 @@ export default function PracticePage() {
                           })}
                         </div>
                       )}
+                      {/* Regenerate button */}
+                      <div style={{ marginTop: 'var(--space-4)', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          id="btn-regenerate-explanation"
+                          disabled={generatingExplanation}
+                          onClick={handleGenerateExplanation}
+                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', fontSize: 'var(--text-sm)' }}
+                        >
+                          {generatingExplanation ? (
+                            <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Regenerating...</>
+                          ) : (
+                            <><Sparkles size={14} /> Regenerate </>
+                          )}
+                        </button>
+                      </div>
+                      {explanationError && (
+                        <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--danger-600)' }}>{explanationError}</p>
+                      )}
                     </>
                   );
                 }
+
 
                 return null;
               };
@@ -854,24 +911,7 @@ export default function PracticePage() {
                         <button
                           className="btn btn-ghost btn-sm"
                           id="btn-generate-explanation"
-                          onClick={async () => {
-                            setGeneratingExplanation(true);
-                            setExplanationError(null);
-                            try {
-                              const result = await generateExplanation({
-                                questionText: currentQuestion.question_text,
-                                answerType: currentQuestion.answer_type,
-                                correctAnswers: currentQuestion.correct_answers,
-                                incorrectOptions: currentQuestion.incorrect_options,
-                              });
-                              setGeneratedExplanation(result);
-                              setExplanationOpen(true);
-                            } catch (e) {
-                              setExplanationError('Failed to generate explanation. Please try again.');
-                            } finally {
-                              setGeneratingExplanation(false);
-                            }
-                          }}
+                          onClick={handleGenerateExplanation}
                           style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', border: '1px dashed var(--primary-300)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', width: '100%', justifyContent: 'center', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', transition: 'all 0.2s ease' }}
                         >
                           <Sparkles size={16} /> Generate Explanation
@@ -889,20 +929,20 @@ export default function PracticePage() {
             {/* ── NEXT / SUBMIT BUTTON ── */}
             <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', marginTop: 'var(--space-6)' }}>
               {!showAnswer ? (
-                <button 
-                  className="btn btn-primary btn-lg" 
+                <button
+                  className="btn btn-primary btn-lg"
                   style={{ width: '100%', maxWidth: '300px' }}
-                  onClick={handleSubmitAnswer} 
+                  onClick={handleSubmitAnswer}
                   disabled={selectedAnswers.length === 0 && currentQuestion?.answer_type !== 'OPEN_ENDED'}
                   id="btn-show-answer"
                 >
                   <Eye size={18} /> Submit Answer
                 </button>
               ) : (
-                <button 
-                  className="btn btn-primary btn-lg" 
+                <button
+                  className="btn btn-primary btn-lg"
                   style={{ width: '100%', maxWidth: '300px' }}
-                  onClick={handleNext} 
+                  onClick={handleNext}
                   id="btn-next-question"
                 >
                   {currentQueueIndex >= sessionQueue.length - 1 ? (
