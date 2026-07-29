@@ -169,6 +169,56 @@ export function useTags() {
     }
   };
 
+  /**
+   * Merge multiple tags into one winner (atomic via RPC)
+   */
+  const mergeTags = async (winnerId, loserIds) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setError(null);
+
+      const { error: rpcError } = await supabase.rpc('merge_tags', {
+        winner_id: winnerId,
+        loser_ids: loserIds,
+      });
+
+      if (rpcError) throw rpcError;
+
+      // Remove loser tags from local state
+      setTags((prev) => prev.filter((t) => !loserIds.includes(t.id)));
+    } catch (err) {
+      setError(err.message);
+      console.error('Error merging tags:', err);
+      throw err;
+    }
+  };
+
+  /**
+   * Bulk soft-delete multiple tags
+   */
+  const bulkDeleteTags = async (tagIds) => {
+    if (!user) throw new Error('Not authenticated');
+
+    try {
+      setError(null);
+
+      const { error: deleteError } = await supabase
+        .from('tags')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', tagIds)
+        .eq('user_id', user.id);
+
+      if (deleteError) throw deleteError;
+
+      setTags((prev) => prev.filter((t) => !tagIds.includes(t.id)));
+    } catch (err) {
+      setError(err.message);
+      console.error('Error bulk deleting tags:', err);
+      throw err;
+    }
+  };
+
   return {
     tags,
     loading,
@@ -177,5 +227,7 @@ export function useTags() {
     createTag,
     updateTag,
     deleteTag,
+    mergeTags,
+    bulkDeleteTags,
   };
 }
