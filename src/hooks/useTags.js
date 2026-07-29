@@ -32,6 +32,18 @@ export function useTags() {
         p_user_id: user.id,
       });
 
+      // Fetch question counts per tag
+      const { data: countData } = await supabase
+        .from('question_tags')
+        .select('tag_id')
+        .in('tag_id', (data || []).map((t) => t.id));
+
+      // Build count map: tag_id -> count
+      const countMap = {};
+      (countData || []).forEach(({ tag_id }) => {
+        countMap[tag_id] = (countMap[tag_id] || 0) + 1;
+      });
+
       // Build lookup map: tag_name -> { avg_score, practiced_count }
       const scoreMap = {};
       (scoreData || []).forEach((s) => {
@@ -42,6 +54,7 @@ export function useTags() {
         ...tag,
         avg_score: scoreMap[tag.name]?.avg_score ?? null,
         practiced_count: scoreMap[tag.name]?.practiced_count ?? 0,
+        question_count: countMap[tag.id] ?? 0,
       }));
 
       setTags(tagsWithScores);

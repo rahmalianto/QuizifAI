@@ -172,6 +172,7 @@ export default function TagsPage() {
                     <tr>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '20%' }}>Tag Name</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)' }}>Description</th>
+                      <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '10%' }}>Questions</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '15%' }}>Knowledge</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '15%' }}>Related URL</th>
                       <th style={{ padding: 'var(--space-3) var(--space-4)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-700)', width: '12%' }}>Created At</th>
@@ -188,12 +189,21 @@ export default function TagsPage() {
                       >
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                            <Tag size={16} color="var(--primary-600)" />
+                            <Tag size={16} style={{ color: 'var(--primary-600)', flexShrink: 0 }} />
                             <span style={{ fontWeight: 'var(--weight-medium)', color: 'var(--neutral-900)' }}>{tag.name}</span>
                           </div>
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top', color: 'var(--neutral-600)', fontSize: 'var(--text-sm)' }}>
                           {tag.description || <span style={{ color: 'var(--neutral-400)', fontStyle: 'italic' }}>No description</span>}
+                        </td>
+                        <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
+                          {tag.question_count > 0 ? (
+                            <span className="badge badge-neutral" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                              {tag.question_count}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-300)' }}>—</span>
+                          )}
                         </td>
                         <td style={{ padding: 'var(--space-3) var(--space-4)', verticalAlign: 'top' }}>
                           {tag.avg_score == null || tag.practiced_count === 0 ? (
@@ -224,8 +234,9 @@ export default function TagsPage() {
                               className="btn btn-ghost btn-icon btn-sm"
                               onClick={() => navigate('/practice', { state: { preSelectedTags: [tag.name] } })}
                               title="Practice this tag"
+                              style={{ color: 'var(--primary-600)' }}
                             >
-                              <Dices size={14} style={{ color: 'var(--primary-500)' }} />
+                              <Dices size={14} />
                             </button>
                             <button
                               className="btn btn-ghost btn-icon btn-sm"

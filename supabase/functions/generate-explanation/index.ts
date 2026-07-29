@@ -77,7 +77,7 @@ serve(async (req: Request) => {
       : "";
     const correctAnswersStr = correctAnswers.join(", ");
 
-    const systemPrompt = `You are an expert educational tutor. Your task is to explain why quiz answers are correct or incorrect.
+    const systemPrompt = `You are an expert educational tutor. Your task is to explain why quiz answers are correct or incorrect. You will also evaluate if the given correct answer is wrong.
 
 Given the following quiz question, provide a clear and concise explanation.
 
@@ -122,7 +122,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
           if (!res.ok) throw new Error(await res.text());
           const data = await res.json();
           responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        } 
+        }
         else if (config.provider === "openai") {
           const res = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",

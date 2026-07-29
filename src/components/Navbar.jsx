@@ -121,91 +121,51 @@ export default function Navbar() {
 
         <div className="navbar-actions">
           <div className="profile-dropdown" ref={dropdownRef} style={{ position: 'relative' }}>
-            <button 
-              className="btn-avatar" 
+            {/* Avatar trigger button */}
+            <button
+              className={`btn-avatar-ring${dropdownOpen ? ' active' : ''}`}
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              style={{
-                background: 'none',
-                border: 'none',
-                padding: 0,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center'
-              }}
               id="btn-profile-dropdown"
               title="User Profile"
+              aria-haspopup="true"
+              aria-expanded={dropdownOpen}
             >
-              <div className="avatar" style={{ backgroundColor: 'var(--primary-500)', color: 'white' }}>{getInitials(user?.email)}</div>
+              <div className="avatar-inner">{getInitials(user?.email)}</div>
+              <span className="avatar-online-dot" />
             </button>
 
+            {/* Dropdown panel */}
             {dropdownOpen && (
-              <div 
-                className="dropdown-menu-custom" 
-                style={{
-                  position: 'absolute',
-                  right: 0,
-                  top: '100%',
-                  marginTop: '8px',
-                  background: 'var(--neutral-0)',
-                  border: 'var(--border-light)',
-                  borderRadius: 'var(--radius-md)',
-                  boxShadow: 'var(--shadow-md)',
-                  minWidth: '200px',
-                  zIndex: 1000,
-                  display: 'flex',
-                  flexDirection: 'column',
-                  padding: '8px 0'
-                }}
-              >
-                <div style={{ padding: '8px 16px', borderBottom: 'var(--border-light)', marginBottom: '4px' }}>
-                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--neutral-500)' }}>Signed in as</div>
-                  <div style={{ fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-semibold)', color: 'var(--neutral-800)', wordBreak: 'break-all' }}>
-                    {user?.email}
+              <div className="profile-dropdown-panel">
+                {/* User info header */}
+                <div className="profile-dropdown-header">
+                  <div className="profile-dropdown-avatar">{getInitials(user?.email)}</div>
+                  <div className="profile-dropdown-info">
+                    <div className="profile-dropdown-label">Signed in as</div>
+                    <div className="profile-dropdown-email">{user?.email}</div>
                   </div>
                 </div>
 
-                <Link
-                  to="/settings"
-                  className="dropdown-item-custom"
-                  onClick={() => setDropdownOpen(false)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
-                    color: 'var(--neutral-700)',
-                    fontSize: 'var(--text-sm)',
-                    transition: 'background var(--transition-fast)'
-                  }}
-                >
-                  <Settings size={16} />
-                  <span>Settings</span>
-                </Link>
+                <div className="profile-dropdown-divider" />
 
-                <button
-                  onClick={() => {
-                    setDropdownOpen(false);
-                    handleSignOut();
-                  }}
-                  className="dropdown-item-custom"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 16px',
-                    color: 'var(--danger-600)',
-                    fontSize: 'var(--text-sm)',
-                    background: 'none',
-                    border: 'none',
-                    width: '100%',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    transition: 'background var(--transition-fast)'
-                  }}
-                >
-                  <LogOut size={16} />
-                  <span>Sign out</span>
-                </button>
+                <div className="profile-dropdown-body">
+                  <Link
+                    to="/settings"
+                    className="profile-dropdown-item"
+                    onClick={() => setDropdownOpen(false)}
+                  >
+                    <span className="profile-dropdown-item-icon"><Settings size={15} /></span>
+                    <span>Settings</span>
+                  </Link>
+
+                  <button
+                    onClick={() => { setDropdownOpen(false); handleSignOut(); }}
+                    className="profile-dropdown-item profile-dropdown-item--danger"
+                  >
+                    <span className="profile-dropdown-item-icon"><LogOut size={15} /></span>
+                    <span>Sign out</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

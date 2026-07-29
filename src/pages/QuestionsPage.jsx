@@ -62,6 +62,7 @@ export default function QuestionsPage() {
   // Bulk Actions State
   const [selectedQuestionIds, setSelectedQuestionIds] = useState([]);
   const [bulkModal, setBulkModal] = useState(null); // 'category', 'tags', 'delete'
+  const lastSelectedIndexRef = useRef(null); // for shift-click range selection
 
   const loadQuestions = useCallback(async () => {
     try {
@@ -114,7 +115,7 @@ export default function QuestionsPage() {
     if (e.target.closest('.select-column')) {
       // If they didn't click the checkbox itself (which handles its own onChange), manually toggle
       if (!e.target.closest('input[type="checkbox"]')) {
-        handleSelectRow(question.id);
+        handleSelectRow(question.id, e.shiftKey);
       }
       return;
     }
@@ -124,16 +125,37 @@ export default function QuestionsPage() {
 
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedQuestionIds(filteredQuestions.map(q => q.id));
+      setSelectedQuestionIds(sortedQuestions.map(q => q.id));
     } else {
       setSelectedQuestionIds([]);
     }
+    lastSelectedIndexRef.current = null;
   };
 
-  const handleSelectRow = (id) => {
-    setSelectedQuestionIds(prev => 
-      prev.includes(id) ? prev.filter(qId => qId !== id) : [...prev, id]
-    );
+  const handleSelectRow = (id, shiftKey = false) => {
+    const currentIndex = sortedQuestions.findIndex(q => q.id === id);
+
+    if (shiftKey && lastSelectedIndexRef.current !== null) {
+      // Range selection: determine the slice between the anchor and current click
+      const start = Math.min(lastSelectedIndexRef.current, currentIndex);
+      const end   = Math.max(lastSelectedIndexRef.current, currentIndex);
+      const rangeIds = sortedQuestions.slice(start, end + 1).map(q => q.id);
+
+      // The target checked state mirrors what the current row will become
+      const willCheck = !selectedQuestionIds.includes(id);
+
+      setSelectedQuestionIds(prev => {
+        const set = new Set(prev);
+        rangeIds.forEach(rid => willCheck ? set.add(rid) : set.delete(rid));
+        return [...set];
+      });
+    } else {
+      // Normal single toggle
+      setSelectedQuestionIds(prev =>
+        prev.includes(id) ? prev.filter(qId => qId !== id) : [...prev, id]
+      );
+      lastSelectedIndexRef.current = currentIndex;
+    }
   };
 
   const handleSaveEdit = async (updates) => {
@@ -500,7 +522,7 @@ export default function QuestionsPage() {
                           <input
                             type="checkbox"
                             checked={selectedQuestionIds.includes(q.id)}
-                            onChange={() => handleSelectRow(q.id)}
+                            onChange={(e) => handleSelectRow(q.id, e.nativeEvent.shiftKey)}
                             style={{ cursor: 'pointer', marginTop: '4px' }}
                           />
                         </td>

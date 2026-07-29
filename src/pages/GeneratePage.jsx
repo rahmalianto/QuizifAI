@@ -88,7 +88,9 @@ export default function GeneratePage() {
 
   // Shared config state (Step 2 for text, Step 1 for image)
   const [selectedTypes, setSelectedTypes] = useState(
-    QUESTION_TYPE_LIST.map((t) => t.value)
+    QUESTION_TYPE_LIST
+      .filter((t) => t.value !== 'SHORT_ANSWER' && t.value !== 'LONG_ANSWER')
+      .map((t) => t.value)
   );
   const [questionCount, setQuestionCount] = useState(DEFAULT_QUESTION_COUNT);
   const [tags, setTags] = useState([]);
