@@ -94,6 +94,7 @@ Return a JSON object with a single "questions" array. Each question object must 
 - "incorrect_options": string[] | null (array of wrong options, null for text answers)
 - "material_reference": string (source citation from the image content)
 - "explanation": string (1-3 sentences explaining WHY the correct answer is right, and what makes the wrong options incorrect if applicable)
+- "option_explanations": object | null (for MULTIPLE_CHOICE and CHECKBOX only: keys are the exact option text strings, values are 1-sentence strings explaining why that option is correct or incorrect. Omit or set to null for SHORT_ANSWER and LONG_ANSWER)
 ${tags && tags.length > 0 ? `- "tags": string[] (use these tags: ${tags.join(", ")})` : ""}
 
 Return ONLY the JSON object, no markdown formatting or code blocks.`;
@@ -126,7 +127,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
               generationConfig: {
                 responseMimeType: "application/json",
                 temperature: 0.7,
-                maxOutputTokens: 8192,
+                maxOutputTokens: 16384,
               },
             }),
           });
@@ -157,6 +158,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
                 }
               ],
               response_format: { type: "json_object" },
+              max_tokens: 16384,
               temperature: 0.7
             })
           });
@@ -191,7 +193,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
                   ]
                 }
               ],
-              max_tokens: 4096,
+              max_tokens: 8192,
               temperature: 0.7
             })
           });
@@ -224,6 +226,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
                 }
               ],
               response_format: { type: "json_object" },
+              max_tokens: 16384,
               temperature: 0.7
             })
           });
@@ -240,7 +243,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
           }
           // Note: Standard Llava model URL
           const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${config.model_name}`;
-          
+
           // Cloudflare vision models take a specific body structure: { image: [base64_as_array_or_string], prompt: prompt_text }
           const res = await fetch(url, {
             method: "POST",
@@ -286,6 +289,9 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
                 : null,
           material_reference: q.material_reference || null,
           explanation: q.explanation || null,
+          option_explanations: (q.answer_type === "SHORT_ANSWER" || q.answer_type === "LONG_ANSWER")
+            ? null
+            : (q.option_explanations && typeof q.option_explanations === "object" ? q.option_explanations : null),
           tags: Array.isArray(q.tags) ? q.tags : tags || [],
         }));
 

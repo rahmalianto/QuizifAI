@@ -58,6 +58,7 @@ export function useQuestions() {
       }
 
       // Add temporary IDs and metadata for the review UI
+      // explanation and option_explanations are already included by the edge function
       const questionsWithMeta = data.questions.map((q, index) => ({
         ...q,
         _tempId: `temp-${Date.now()}-${index}`,
@@ -126,6 +127,7 @@ export function useQuestions() {
       }
 
       // Add temporary IDs — _included starts as null (pending) for one-by-one review
+      // explanation and option_explanations are already included by the edge function
       const questionsWithMeta = data.questions.map((q, index) => ({
         ...q,
         _tempId: `temp-${Date.now()}-${index}`,
@@ -211,6 +213,7 @@ export function useQuestions() {
           : null,
         material_reference: q.material_reference || null,
         explanation: q.explanation || null,
+        option_explanations: q.option_explanations || null,
         current_score: 0,
       }));
 
@@ -293,6 +296,7 @@ export function useQuestions() {
     correctAnswers,
     incorrectOptions,
     explanation,
+    optionExplanations = null,
     tags = [],
     questionImageFile = null,
     explanationImageFile = null,
@@ -314,6 +318,7 @@ export function useQuestions() {
           : null,
         material_reference: 'Manual Entry',
         explanation: explanation || null,
+        option_explanations: optionExplanations || null,
         current_score: 0,
       };
 

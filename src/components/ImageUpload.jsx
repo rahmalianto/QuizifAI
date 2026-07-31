@@ -217,7 +217,7 @@ export default function ImageUpload({ onImageReady, onFileReady, initialImageUrl
             {!isCompact && (
               <>
                 <p style={{ fontSize: 'var(--text-sm)', color: 'var(--neutral-500)', marginBottom: 'var(--space-4)' }}>
-                  PNG, JPG, WebP, or GIF — compressed to max 250KB
+                  PNG, JPG, WebP, or GIF — resized to max 1280px for AI processing
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-3)' }}>
                   <span

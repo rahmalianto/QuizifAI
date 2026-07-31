@@ -91,6 +91,7 @@ Return a JSON object with a single "questions" array. Each question object must 
 - "incorrect_options": string[] | null (array of wrong options, null for text answers)
 - "material_reference": string (source citation from the provided text)
 - "explanation": string (1-3 sentences explaining WHY the correct answer is right, and what makes the wrong options incorrect if applicable)
+- "option_explanations": object | null (for MULTIPLE_CHOICE and CHECKBOX only: keys are the exact option text strings, values are 1-sentence strings explaining why that option is correct or incorrect. Omit or set to null for SHORT_ANSWER and LONG_ANSWER)
 ${tags && tags.length > 0 ? `- "tags": string[] (use these tags: ${tags.join(", ")})` : ""}
 
 Return ONLY the JSON object, no markdown formatting or code blocks.`;
@@ -115,14 +116,14 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
               generationConfig: {
                 responseMimeType: "application/json",
                 temperature: 0.7,
-                maxOutputTokens: 8192,
+                maxOutputTokens: 16384,
               },
             }),
           });
           if (!res.ok) throw new Error(await res.text());
           const data = await res.json();
           responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        } 
+        }
         else if (config.provider === "openai") {
           const res = await fetch("https://api.openai.com/v1/chat/completions", {
             method: "POST",
@@ -137,6 +138,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
                 { role: "user", content: userPrompt }
               ],
               response_format: { type: "json_object" },
+              max_tokens: 16384,
               temperature: 0.7
             })
           });
@@ -156,7 +158,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
               model: config.model_name,
               system: systemPrompt,
               messages: [{ role: "user", content: userPrompt }],
-              max_tokens: 4096,
+              max_tokens: 8192,
               temperature: 0.7
             })
           });
@@ -178,6 +180,7 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
                 { role: "user", content: userPrompt }
               ],
               response_format: { type: "json_object" },
+              max_tokens: 16384,
               temperature: 0.7
             })
           });
@@ -233,10 +236,13 @@ Return ONLY the JSON object, no markdown formatting or code blocks.`;
             q.answer_type === "SHORT_ANSWER" || q.answer_type === "LONG_ANSWER"
               ? null
               : Array.isArray(q.incorrect_options)
-              ? q.incorrect_options
-              : null,
+                ? q.incorrect_options
+                : null,
           material_reference: q.material_reference || null,
           explanation: q.explanation || null,
+          option_explanations: (q.answer_type === "SHORT_ANSWER" || q.answer_type === "LONG_ANSWER")
+            ? null
+            : (q.option_explanations && typeof q.option_explanations === "object" ? q.option_explanations : null),
           tags: Array.isArray(q.tags) ? q.tags : tags || [],
         }));
 

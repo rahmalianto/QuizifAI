@@ -16,11 +16,6 @@ export function compressImage(file) {
       return;
     }
 
-    if (file.size <= MAX_TARGET_SIZE_BYTES) {
-      resolve(file); // Already under the limit
-      return;
-    }
-
     const reader = new FileReader();
     reader.onload = () => {
       const img = new Image();
@@ -28,12 +23,19 @@ export function compressImage(file) {
         const canvas = document.createElement('canvas');
         let { width, height } = img;
 
-        // Calculate resize scale factor based on target size ratio
-        const sizeRatio = MAX_TARGET_SIZE_BYTES / file.size;
-        const scaleFactor = Math.sqrt(sizeRatio) * 0.9; // 10% headroom
-
-        width = Math.round(width * scaleFactor);
-        height = Math.round(height * scaleFactor);
+        // Step 1: Cap pixel dimensions to 1280px on the longest side.
+        // This is the primary defence against WORKER_RESOURCE_LIMIT — the base64
+        // payload grows with pixel count, not (compressed) file size.
+        const MAX_DIMENSION = 1280;
+        if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+          if (width >= height) {
+            height = Math.round((height / width) * MAX_DIMENSION);
+            width = MAX_DIMENSION;
+          } else {
+            width = Math.round((width / height) * MAX_DIMENSION);
+            height = MAX_DIMENSION;
+          }
+        }
 
         canvas.width = width;
         canvas.height = height;
@@ -41,7 +43,7 @@ export function compressImage(file) {
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Compress as JPEG with adjustable quality
+        // Step 2: Compress as JPEG at 65% quality (sufficient for AI text recognition).
         canvas.toBlob(
           (blob) => {
             if (!blob) {
@@ -55,7 +57,7 @@ export function compressImage(file) {
             resolve(compressedFile);
           },
           'image/jpeg',
-          0.8 // 80% JPEG quality
+          0.80
         );
       };
       img.onerror = reject;
@@ -65,6 +67,7 @@ export function compressImage(file) {
     reader.readAsDataURL(file);
   });
 }
+
 
 /**
  * Upload a question or explanation image path.
