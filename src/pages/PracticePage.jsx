@@ -7,7 +7,7 @@ import Navbar from '../components/Navbar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import { getSignedImageUrl } from '../services/imageService';
-import { Dices, ArrowRight, CheckCircle, Eye, Settings, Trophy, RotateCcw, Sparkles, Save, Check } from 'lucide-react';
+import { Dices, ArrowRight, CheckCircle, Eye, Settings, Trophy, RotateCcw, Sparkles, Save, Check, X } from 'lucide-react';
 
 export default function PracticePage() {
   const navigate = useNavigate();
@@ -539,6 +539,8 @@ export default function PracticePage() {
     if (!currentQuestion) return null;
 
     if (currentQuestion.answer_type === 'MULTIPLE_CHOICE' || currentQuestion.answer_type === 'CHECKBOX' || currentQuestion.answer_type === 'TRUE_FALSE') {
+      const isCheckbox = currentQuestion.answer_type === 'CHECKBOX';
+
       return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)', marginTop: 'var(--space-4)' }}>
           {currentOptions.map((opt, i) => {
@@ -547,13 +549,19 @@ export default function PracticePage() {
 
             let bgClass = 'var(--neutral-50)';
             let borderClass = 'var(--border-light)';
+            let borderStyle = 'solid';
             let textColor = 'var(--neutral-800)';
 
             if (showAnswer) {
-              if (isCorrect) {
+              if (isCorrect && isSelected) {
                 bgClass = 'var(--success-50)';
                 borderClass = 'var(--success-500)';
                 textColor = 'var(--success-700)';
+              } else if (isCorrect && !isSelected) {
+                bgClass = 'var(--success-50)';
+                borderClass = 'var(--success-400)';
+                borderStyle = 'dashed';
+                textColor = 'var(--success-800)';
               } else if (isSelected) {
                 bgClass = 'var(--danger-50)';
                 borderClass = 'var(--danger-500)';
@@ -576,7 +584,7 @@ export default function PracticePage() {
                   padding: 'var(--space-3)',
                   borderRadius: 'var(--radius-md)',
                   background: bgClass,
-                  border: `2px solid ${borderClass}`,
+                  border: `2px ${borderStyle} ${borderClass}`,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 'var(--space-3)',
@@ -585,19 +593,82 @@ export default function PracticePage() {
                   opacity: showAnswer && !isCorrect && !isSelected ? 0.6 : 1
                 }}
               >
-                <div style={{
-                  width: '28px', height: '28px', borderRadius: '50%',
-                  background: showAnswer ? (isCorrect ? 'var(--success-500)' : isSelected ? 'var(--danger-500)' : 'white') : (isSelected ? 'var(--primary-500)' : 'white'),
-                  border: showAnswer ? 'none' : (isSelected ? 'none' : '1px solid var(--neutral-300)'),
-                  color: showAnswer ? (isCorrect || isSelected ? 'white' : 'var(--neutral-600)') : (isSelected ? 'white' : 'var(--neutral-600)'),
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '12px', fontWeight: 'bold'
-                }}>
-                  {String.fromCharCode(65 + i)}
-                </div>
-                <span style={{ fontSize: 'var(--text-md)', flex: 1, color: textColor, fontWeight: isSelected ? '500' : 'normal' }}>{opt}</span>
-                {showAnswer && isCorrect && <CheckCircle size={20} color="var(--success-500)" />}
-                {showAnswer && isSelected && !isCorrect && <span style={{ color: 'var(--danger-500)', fontWeight: 'bold', fontSize: '18px' }}>✕</span>}
+                {/* Checkbox or Letter Badge (A/B/C/D) */}
+                {isCheckbox ? (
+                  <div
+                    style={{
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: 'var(--radius-xs, 4px)',
+                      background: showAnswer
+                        ? (isCorrect
+                            ? (isSelected ? 'var(--success-500)' : 'var(--success-100)')
+                            : (isSelected ? 'var(--danger-500)' : 'white'))
+                        : (isSelected ? 'var(--primary-500)' : 'white'),
+                      border: showAnswer
+                        ? (isCorrect
+                            ? (isSelected ? 'none' : '2px solid var(--success-500)')
+                            : (isSelected ? 'none' : '1px solid var(--neutral-300)'))
+                        : (isSelected ? 'none' : '2px solid var(--neutral-300)'),
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      transition: 'all 0.15s ease',
+                    }}
+                  >
+                    {showAnswer ? (
+                      isCorrect ? (
+                        <Check size={16} color={isSelected ? 'white' : 'var(--success-600)'} strokeWidth={3} />
+                      ) : isSelected ? (
+                        <X size={16} color="white" strokeWidth={3} />
+                      ) : null
+                    ) : (
+                      isSelected && <Check size={16} color="white" strokeWidth={3} />
+                    )}
+                  </div>
+                ) : (
+                  <div style={{
+                    width: '28px', height: '28px', borderRadius: '50%',
+                    background: showAnswer ? (isCorrect ? 'var(--success-500)' : isSelected ? 'var(--danger-500)' : 'white') : (isSelected ? 'var(--primary-500)' : 'white'),
+                    border: showAnswer ? 'none' : (isSelected ? 'none' : '1px solid var(--neutral-300)'),
+                    color: showAnswer ? (isCorrect || isSelected ? 'white' : 'var(--neutral-600)') : (isSelected ? 'white' : 'var(--neutral-600)'),
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '12px', fontWeight: 'bold', flexShrink: 0
+                  }}>
+                    {String.fromCharCode(65 + i)}
+                  </div>
+                )}
+
+                <span style={{ fontSize: 'var(--text-md)', flex: 1, color: textColor, fontWeight: isSelected ? '500' : 'normal' }}>
+                  {opt}
+                </span>
+
+                {/* Right-side status indicators */}
+                {showAnswer && isCorrect && isSelected && (
+                  <CheckCircle size={20} color="var(--success-500)" />
+                )}
+                {showAnswer && isCorrect && !isSelected && (
+                  <span
+                    style={{
+                      fontSize: 'var(--text-xs)',
+                      fontWeight: 'var(--weight-semibold)',
+                      color: 'var(--success-700)',
+                      background: 'var(--success-100)',
+                      border: '1px solid var(--success-300)',
+                      padding: '2px 8px',
+                      borderRadius: 'var(--radius-sm)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <Check size={12} /> Correct (Not selected)
+                  </span>
+                )}
+                {showAnswer && isSelected && !isCorrect && (
+                  <span style={{ color: 'var(--danger-500)', fontWeight: 'bold', fontSize: '18px' }}>✕</span>
+                )}
               </div>
             );
           })}
