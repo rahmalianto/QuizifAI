@@ -872,7 +872,7 @@ export function useQuestions() {
    * Generate an AI explanation for a question
    * Returns { explanation, option_explanations }
    */
-  const generateExplanation = async ({ questionText, answerType, correctAnswers, incorrectOptions }) => {
+  const generateExplanation = async ({ questionText, answerType, correctAnswers, incorrectOptions, customPrompt }) => {
     if (!user) throw new Error('Not authenticated');
 
     const { data, error: fnError } = await supabase.functions.invoke(
@@ -883,6 +883,7 @@ export function useQuestions() {
           answerType,
           correctAnswers,
           incorrectOptions: incorrectOptions || [],
+          customPrompt: customPrompt || '',
         },
       }
     );
@@ -894,6 +895,18 @@ export function useQuestions() {
         try {
           const parsed = JSON.parse(text);
           if (parsed.error) errorMessage = parsed.error;
+          if (parsed.details) {
+            try {
+              const detailsObj = typeof parsed.details === 'string' ? JSON.parse(parsed.details) : parsed.details;
+              if (detailsObj?.error?.message) {
+                errorMessage += ` (${detailsObj.error.message})`;
+              } else {
+                errorMessage += ` (${parsed.details})`;
+              }
+            } catch (e) {
+              errorMessage += ` (${parsed.details})`;
+            }
+          }
         } catch (e) {
           errorMessage = text;
         }

@@ -184,12 +184,12 @@ export default function AnalyticsChart({ data = [] }) {
           <div className="analytics-tooltip-date">{formatDateLong(tooltip.date)}</div>
           <div className="analytics-tooltip-row">
             <span className="analytics-tooltip-dot" style={{ background: '#0EA5E9' }} />
-            <span>Sessions</span>
+            <span>Practice Count</span>
             <strong>{tooltip.count}</strong>
           </div>
           <div className="analytics-tooltip-row">
             <span className="analytics-tooltip-dot" style={{ background: '#7C5CFC' }} />
-            <span>Avg Score</span>
+            <span>Score</span>
             <strong>{tooltip.score != null ? `${Math.round(tooltip.score)}%` : '—'}</strong>
           </div>
         </div>

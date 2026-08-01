@@ -250,11 +250,11 @@ export default function DashboardPage() {
                 <div className="analytics-legend">
                   <div className="analytics-legend-item">
                     <span className="analytics-legend-dot" style={{ background: '#0EA5E9' }} />
-                    Sessions
+                    Practice Count
                   </div>
                   <div className="analytics-legend-item">
                     <span className="analytics-legend-dot" style={{ background: '#7C5CFC' }} />
-                    Avg Score %
+                    Score %
                   </div>
                 </div>
               </div>

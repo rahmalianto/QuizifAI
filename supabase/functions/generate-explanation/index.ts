@@ -59,7 +59,7 @@ serve(async (req: Request) => {
     }
 
     // Parse request body
-    const { questionText, answerType, correctAnswers, incorrectOptions } = await req.json();
+    const { questionText, answerType, correctAnswers, incorrectOptions, customPrompt } = await req.json();
 
     if (!questionText || !answerType || !correctAnswers) {
       return new Response(
@@ -76,6 +76,9 @@ serve(async (req: Request) => {
       ? `\nAnswer options:\n${allOptions.map((o: string) => `- ${o}`).join("\n")}`
       : "";
     const correctAnswersStr = correctAnswers.join(", ");
+    const customPromptSection = customPrompt && typeof customPrompt === "string" && customPrompt.trim()
+      ? `\n\nUSER CUSTOM INSTRUCTIONS / REQUEST FOR EXPLANATION:\n${customPrompt.trim()}\n(Priority instruction: Tailor the explanation following the user's custom instructions above while respecting output JSON format)`
+      : "";
 
     const systemPrompt = `You are an expert educational tutor. Your task is to explain why quiz answers are correct or incorrect. You will also evaluate if the given correct answer is wrong.
 
@@ -83,13 +86,14 @@ Given the following quiz question, provide a clear and concise explanation.
 
 Question: ${questionText}
 Question type: ${answerType}
-Correct answer(s): ${correctAnswersStr}${optionsSection}
+Correct answer(s): ${correctAnswersStr}${optionsSection}${customPromptSection}
 
 RULES:
 1. Write a "explanation" field: a clear, concise explanation of WHY the correct answer(s) are right. Maximum 3 sentences.
 2. ${hasOptions ? `Write an "option_explanations" field: a JSON object where each key is one of the answer options and the value is a 1-sentence explanation of why it is correct or incorrect.` : `Do NOT include "option_explanations" since this question has no selectable options.`}
 3. Be educational and helpful. Avoid repeating the question text.
 4. Write in a neutral, factual tone.
+5. If user custom instructions were provided above, adhere to them when formulating the explanation.
 
 OUTPUT FORMAT:
 Return a JSON object with:

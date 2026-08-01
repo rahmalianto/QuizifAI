@@ -50,6 +50,7 @@ export default function PracticePage() {
   const [explanationSaved, setExplanationSaved] = useState(false);
   const [explanationError, setExplanationError] = useState(null);
   const [explanationOpen, setExplanationOpen] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState('');
 
   // Fetch initial data
   useEffect(() => {
@@ -231,6 +232,7 @@ export default function PracticePage() {
     setExplanationSaved(false);
     setExplanationError(null);
     setExplanationOpen(false);
+    setCustomPrompt('');
   };
 
   const handleOptionClick = (opt) => {
@@ -522,6 +524,7 @@ export default function PracticePage() {
         answerType: currentQuestion.answer_type,
         correctAnswers: currentQuestion.correct_answers,
         incorrectOptions: currentQuestion.incorrect_options,
+        customPrompt: customPrompt.trim(),
       });
       setGeneratedExplanation(result);
       setExplanationOpen(true);
@@ -529,7 +532,7 @@ export default function PracticePage() {
       setExplanationSaved(false);
       setSavingExplanation(false);
     } catch (e) {
-      setExplanationError('Failed to generate explanation. Please try again.');
+      setExplanationError(e.message || 'Failed to generate explanation. Please try again.');
     } finally {
       setGeneratingExplanation(false);
     }
@@ -820,53 +823,71 @@ export default function PracticePage() {
                           })}
                         </div>
                       )}
-                      {/* Footer: Regenerate + Save */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'var(--space-3)', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          id="btn-regenerate-explanation-generated"
-                          disabled={generatingExplanation || savingExplanation}
-                          onClick={handleGenerateExplanation}
-                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--neutral-500)', fontSize: 'var(--text-sm)' }}
-                        >
-                          {generatingExplanation ? (
-                            <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Regenerating...</>
-                          ) : (
-                            <><Sparkles size={14} /> Regenerate</>
-                          )}
-                        </button>
-                        {explanationSaved ? (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--success-600)', fontWeight: 'var(--weight-medium)' }}>
-                            <Check size={16} /> Explanation saved!
-                          </span>
-                        ) : (
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            disabled={savingExplanation || generatingExplanation}
-                            onClick={async () => {
-                              setSavingExplanation(true);
-                              try {
-                                await saveExplanation(currentQuestion.id, explanation, option_explanations);
-                                setSessionQueue(prev => prev.map((q, idx) =>
-                                  idx === currentQueueIndex ? { ...q, explanation, option_explanations } : q
-                                ));
-                                setExplanationSaved(true);
-                              } catch (e) {
-                                setExplanationError('Failed to save. Please try again.');
-                              } finally {
-                                setSavingExplanation(false);
+                      {/* Footer: Regenerate + Prompt + Save */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
+                        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            id="input-regenerate-prompt"
+                            placeholder="Add custom instructions for explanation (e.g. 'Explain simply')..."
+                            value={customPrompt}
+                            onChange={(e) => setCustomPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !generatingExplanation && !savingExplanation) {
+                                handleGenerateExplanation();
                               }
                             }}
-                            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
-                            id="btn-save-explanation"
+                            className="input-field"
+                            style={{ flex: 1, fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-3)', background: 'white', borderRadius: 'var(--radius-sm)' }}
+                          />
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            id="btn-regenerate-explanation-generated"
+                            disabled={generatingExplanation || savingExplanation}
+                            onClick={handleGenerateExplanation}
+                            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--neutral-600)', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap' }}
                           >
-                            {savingExplanation ? (
-                              <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Saving...</>
+                            {generatingExplanation ? (
+                              <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Regenerating...</>
                             ) : (
-                              <><Save size={14} /> Save Explanation</>
+                              <><Sparkles size={14} /> Regenerate</>
                             )}
                           </button>
-                        )}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+                          {explanationSaved ? (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--success-600)', fontWeight: 'var(--weight-medium)' }}>
+                              <Check size={16} /> Explanation saved!
+                            </span>
+                          ) : (
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              disabled={savingExplanation || generatingExplanation}
+                              onClick={async () => {
+                                setSavingExplanation(true);
+                                try {
+                                  await saveExplanation(currentQuestion.id, explanation, option_explanations);
+                                  setSessionQueue(prev => prev.map((q, idx) =>
+                                    idx === currentQueueIndex ? { ...q, explanation, option_explanations } : q
+                                  ));
+                                  setExplanationSaved(true);
+                                } catch (e) {
+                                  setExplanationError('Failed to save. Please try again.');
+                                } finally {
+                                  setSavingExplanation(false);
+                                }
+                              }}
+                              style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}
+                              id="btn-save-explanation"
+                            >
+                              {savingExplanation ? (
+                                <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Saving...</>
+                              ) : (
+                                <><Save size={14} /> Save Explanation</>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                       {explanationError && (
                         <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--danger-600)' }}>{explanationError}</p>
@@ -907,14 +928,28 @@ export default function PracticePage() {
                           })}
                         </div>
                       )}
-                      {/* Regenerate button */}
-                      <div style={{ marginTop: 'var(--space-4)', display: 'flex', justifyContent: 'flex-end' }}>
+                      {/* Regenerate button + Prompt input */}
+                      <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          id="input-regenerate-prompt-existing"
+                          placeholder="Add custom instructions for explanation (e.g. 'Explain simply')..."
+                          value={customPrompt}
+                          onChange={(e) => setCustomPrompt(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !generatingExplanation) {
+                              handleGenerateExplanation();
+                            }
+                          }}
+                          className="input-field"
+                          style={{ flex: 1, fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-3)', background: 'white', borderRadius: 'var(--radius-sm)' }}
+                        />
                         <button
                           className="btn btn-ghost btn-sm"
                           id="btn-regenerate-explanation"
                           disabled={generatingExplanation}
                           onClick={handleGenerateExplanation}
-                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', fontSize: 'var(--text-sm)' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', fontSize: 'var(--text-sm)', whiteSpace: 'nowrap' }}
                         >
                           {generatingExplanation ? (
                             <><span style={{ width: '14px', height: '14px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} /> Regenerating...</>
@@ -979,14 +1014,30 @@ export default function PracticePage() {
                       </div>
                     ) : (
                       <>
-                        <button
-                          className="btn btn-ghost btn-sm"
-                          id="btn-generate-explanation"
-                          onClick={handleGenerateExplanation}
-                          style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', border: '1px dashed var(--primary-300)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3) var(--space-4)', width: '100%', justifyContent: 'center', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', transition: 'all 0.2s ease' }}
-                        >
-                          <Sparkles size={16} /> Generate Explanation
-                        </button>
+                        <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+                          <input
+                            type="text"
+                            id="input-generate-prompt-initial"
+                            placeholder="Custom prompt / instructions for explanation (optional)..."
+                            value={customPrompt}
+                            onChange={(e) => setCustomPrompt(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !generatingExplanation) {
+                                handleGenerateExplanation();
+                              }
+                            }}
+                            className="input-field"
+                            style={{ flex: 1, fontSize: 'var(--text-xs)', padding: 'var(--space-2) var(--space-3)' }}
+                          />
+                          <button
+                            className="btn btn-ghost btn-sm"
+                            id="btn-generate-explanation"
+                            onClick={handleGenerateExplanation}
+                            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', color: 'var(--primary-600)', border: '1px dashed var(--primary-300)', borderRadius: 'var(--radius-md)', padding: 'var(--space-2) var(--space-4)', fontSize: 'var(--text-sm)', fontWeight: 'var(--weight-medium)', whiteSpace: 'nowrap', transition: 'all 0.2s ease' }}
+                          >
+                            <Sparkles size={16} /> Generate Explanation
+                          </button>
+                        </div>
                         {explanationError && (
                           <p style={{ marginTop: 'var(--space-2)', fontSize: 'var(--text-sm)', color: 'var(--danger-600)' }}>{explanationError}</p>
                         )}
