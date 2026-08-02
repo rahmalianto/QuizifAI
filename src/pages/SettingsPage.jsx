@@ -18,7 +18,7 @@ export default function SettingsPage() {
   const [configs, setConfigs] = useState([]);
   const [showKeys, setShowKeys] = useState({});
   const [testingKeys, setTestingKeys] = useState({});
-  const [removedProviders, setRemovedProviders] = useState([]);
+  const [removedIds, setRemovedIds] = useState([]);
 
   useEffect(() => { fetchConfigs(); }, []);
 
@@ -37,7 +37,7 @@ export default function SettingsPage() {
       } else {
         setConfigs([{ provider: 'google', api_key: '', model_name: 'gemini-2.5-flash', is_enabled: true, priority: 0 }]);
       }
-      setRemovedProviders([]);
+      setRemovedIds([]);
     } catch (err) {
       console.error('Error fetching API configs:', err);
       toast.error('Failed to load settings');
@@ -71,12 +71,10 @@ export default function SettingsPage() {
   };
 
   const handleAddKey = () => {
-    const used = configs.map(c => c.provider);
-    const unused = PROVIDER_OPTIONS.find(p => !used.includes(p.id));
     setConfigs(prev => [...prev, {
-      provider: unused ? unused.id : 'google',
+      provider: 'google',
       api_key: '',
-      model_name: unused ? unused.defaultModel : 'gemini-2.5-flash',
+      model_name: 'gemini-2.5-flash',
       is_enabled: true,
       priority: prev.length
     }]);
@@ -84,7 +82,7 @@ export default function SettingsPage() {
 
   const handleRemoveRow = (index) => {
     const target = configs[index];
-    if (target.id) setRemovedProviders(prev => [...prev, target.provider]);
+    if (target.id) setRemovedIds(prev => [...prev, target.id]);
     const filtered = configs.filter((_, idx) => idx !== index);
     filtered.forEach((c, idx) => { c.priority = idx; });
     setConfigs(filtered);
@@ -129,26 +127,39 @@ export default function SettingsPage() {
         setSaving(false);
         return;
       }
-      const provs = configs.map(c => c.provider);
-      if (provs.some((v, i) => provs.indexOf(v) !== i)) {
-        toast.error('Duplicate providers found.');
-        setSaving(false);
-        return;
-      }
-      if (removedProviders.length > 0) {
-        const { error: delErr } = await supabase.from('user_api_configs').delete().eq('user_id', user.id).in('provider', removedProviders);
+      if (removedIds.length > 0) {
+        const { error: delErr } = await supabase.from('user_api_configs').delete().eq('user_id', user.id).in('id', removedIds);
         if (delErr) throw delErr;
       }
-      const rows = configs.map(c => ({
-        user_id: user.id,
-        provider: c.provider,
-        api_key: c.api_key.trim(),
-        model_name: c.model_name.trim() || PROVIDER_OPTIONS.find(p => p.id === c.provider).defaultModel,
-        priority: c.priority,
-        is_enabled: c.is_enabled
-      }));
-      const { error } = await supabase.from('user_api_configs').upsert(rows, { onConflict: 'user_id,provider' });
-      if (error) throw error;
+      const existingRows = [];
+      const newRows = [];
+      
+      configs.forEach(c => {
+        const row = {
+          user_id: user.id,
+          provider: c.provider,
+          api_key: c.api_key.trim(),
+          model_name: c.model_name.trim() || PROVIDER_OPTIONS.find(p => p.id === c.provider).defaultModel,
+          priority: c.priority,
+          is_enabled: c.is_enabled
+        };
+        if (c.id) {
+          row.id = c.id;
+          existingRows.push(row);
+        } else {
+          newRows.push(row);
+        }
+      });
+
+      if (existingRows.length > 0) {
+        const { error } = await supabase.from('user_api_configs').upsert(existingRows, { onConflict: 'id' });
+        if (error) throw error;
+      }
+      
+      if (newRows.length > 0) {
+        const { error } = await supabase.from('user_api_configs').insert(newRows);
+        if (error) throw error;
+      }
       toast.success('Settings saved!');
       fetchConfigs();
     } catch (err) {
@@ -185,9 +196,9 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="page-layout">
+    <>
       <Navbar />
-      <main className="main-content" id="settings-page">
+      <main className="page" id="settings-page">
         <div className="container py-5">
           <div className="card max-w-5xl mx-auto shadow-sm">
             <div className="card-header d-flex align-items-center gap-2">
@@ -352,6 +363,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }
