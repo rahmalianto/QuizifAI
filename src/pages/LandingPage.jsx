@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Sparkles, Brain, Target, ArrowRight, Zap, CheckCircle2, FileText, BarChart3, Database } from 'lucide-react';
+import { Sparkles, Brain, Target, ArrowRight, Zap, CheckCircle2, FileText, BarChart3, Database, Quote } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Navigate } from 'react-router-dom';
 
@@ -135,6 +135,36 @@ export default function LandingPage() {
               </div>
               <h4>Detailed Analytics</h4>
               <p>Monitor your progress, see your weak spots, and improve your average score.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Quotes Section */}
+      <section className="section quotes-section">
+        <div className="container">
+          <div className="section-header text-center">
+            <h2 className="section-title">Why Practice Matters</h2>
+            <p className="section-subtitle">The science and philosophy behind continuous repetition.</p>
+          </div>
+          
+          <div className="quotes-grid">
+            <div className="quote-card glass-card">
+              <Quote className="quote-icon text-primary-400" size={32} />
+              <p className="quote-text">"Practice isn't the thing you do once you're good. It's the thing you do that makes you good."</p>
+              <div className="quote-author">— Malcolm Gladwell</div>
+            </div>
+            
+            <div className="quote-card glass-card">
+              <Quote className="quote-icon text-info-400" size={32} />
+              <p className="quote-text">"An ounce of practice is generally worth more than a ton of theory."</p>
+              <div className="quote-author">— E.F. Schumacher</div>
+            </div>
+            
+            <div className="quote-card glass-card">
+              <Quote className="quote-icon text-success-400" size={32} />
+              <p className="quote-text">"Practice is the hardest part of learning, and training is the essence of transformation."</p>
+              <div className="quote-author">— Ann Voskamp</div>
             </div>
           </div>
         </div>

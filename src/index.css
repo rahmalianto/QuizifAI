@@ -2089,6 +2089,48 @@ input[type="range"]::-webkit-slider-thumb:hover {
   font-size: var(--text-lg);
 }
 
+/* Quotes Section */
+.quotes-section {
+  padding: 100px 0;
+  position: relative;
+}
+
+.quotes-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-8);
+}
+
+.quote-card {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+}
+
+.quote-icon {
+  margin: 0 auto var(--space-4);
+  opacity: 0.8;
+}
+
+.quote-text {
+  font-size: var(--text-lg);
+  font-style: italic;
+  color: var(--neutral-700);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-6);
+  flex-grow: 1;
+}
+
+.quote-author {
+  font-weight: var(--weight-bold);
+  color: var(--neutral-900);
+  font-size: var(--text-sm);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
 /* CTA Section */
 .cta-section {
   padding: 80px 0;
@@ -2124,7 +2166,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
   .hero-title-break {
     display: none;
   }
-  .steps-grid, .features-grid {
+  .steps-grid, .features-grid, .quotes-grid {
     grid-template-columns: 1fr;
   }
   .hero-stats {
