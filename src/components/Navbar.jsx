@@ -39,7 +39,7 @@ export default function Navbar() {
   return (
     <nav className="navbar" id="main-navbar">
       <div className="container">
-        <NavLink to="/" className="navbar-brand">
+        <NavLink to="/dashboard" className="navbar-brand">
           <div className="logo">Q</div>
           <span>QuizifAI</span>
         </NavLink>
